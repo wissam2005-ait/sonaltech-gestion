@@ -8,7 +8,10 @@ Application qui remplace le fichier Excel de l'entreprise : **devis, factures, b
   connectés avec le mot de passe de l'entreprise. Sans internet, les modifications attendent sur l'appareil.
 - **Rien n'est jamais effacé du site** : une suppression va dans la Corbeille (restaurable), et une copie complète
   des données est gardée chaque jour.
-- Impression / PDF au format A4 et export **Excel** (avec formules) pour chaque document, le pointage et les frais.
+- **PDF** de chaque document au format de l'entreprise (bouton PDF, ou menu **Archives PDF** pour tout retrouver
+  et tout télécharger en ZIP), ainsi que du pointage/salaires et des frais. Les PDF sont fabriqués dans l'application,
+  même sans internet, à partir des données enregistrées sur le site.
+- Export **Excel** (avec formules) pour chaque document, le pointage et les frais.
 
 ## Version clé USB (sans internet, sans installation)
 

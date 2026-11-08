@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, docLabels, docTotals, getCompany, lineTotal, paidAmount, remove as removeRecord, round2, type Doc, type DocType, type Line } from '../lib/db'
 import { createDoc, docRef, exportDocExcel } from '../lib/docs'
+import { downloadDocPdf, openDocPdf } from '../lib/pdf'
 import { money, parseNum, todayIso } from '../lib/format'
 import PrintedDoc from '../components/PrintedDoc'
 import { Field, Modal, PageHeader, confirmDelete } from '../components/ui'
@@ -82,7 +83,9 @@ export default function DocEdit() {
         title={<>{docLabels[type].one} {docRef(doc)}</>}
         subtitle={<span className="flex items-center gap-2">{saved ? <><Icon name="check" size={14} /> Enregistré sur cet ordinateur</> : 'Enregistrement…'}</span>}
         actions={<>
-          <button className="btn-volt" onClick={print}><Icon name="print" size={16} /> Imprimer / PDF</button>
+          <button className="btn-volt" onClick={async () => { await db.docs.put(doc); await downloadDocPdf(doc) }}><Icon name="download" size={16} /> PDF</button>
+          <button className="btn-ghost" onClick={async () => { await db.docs.put(doc); await openDocPdf(doc) }}><Icon name="external" size={16} /> Ouvrir le PDF</button>
+          <button className="btn-ghost" onClick={print}><Icon name="print" size={16} /> Imprimer</button>
           <button className="btn-ghost" onClick={() => exportDocExcel(doc)}><Icon name="sheet" size={16} /> Excel</button>
           <button className="btn-ghost" onClick={duplicate}><Icon name="plus" size={16} /> Dupliquer</button>
           {doc.type === 'devis' && <>

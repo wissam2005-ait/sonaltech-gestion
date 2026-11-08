@@ -4,6 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, fraisCategories, remove, type Frais, type FraisKind } from '../lib/db'
 import { currentMonth, dateFr, money, monthLabel, parseNum, shiftMonth, todayIso } from '../lib/format'
 import { downloadXlsx, ST, type Sheet } from '../lib/xlsx'
+import { tablePdf } from '../lib/pdf'
+import { getCompany } from '../lib/db'
 import { Empty, Field, Modal, PageHeader, confirmDelete } from '../components/ui'
 import { Icon } from '../components/icons'
 
@@ -33,10 +35,22 @@ export default function FraisPage() {
     downloadXlsx(`Frais ${month}`, [{ name: 'Frais', rows, widths: [11, 20, 22, 22, 18, 12, 30, 14] }])
   }
 
+  async function exportPdf() {
+    tablePdf({
+      company: await getCompany(), fileName: `Frais ${month === 'all' ? 'toutes periodes' : month}.pdf`,
+      title: `État des frais — ${month === 'all' ? 'toutes périodes' : monthLabel(month)}`, subtitle: chantierFilter ? `Chantier : ${chName(chantierFilter)}` : undefined,
+      head: ['Date', 'Type', 'Catégorie', 'Chantier / employé', 'Paiement', 'Note', 'Montant (DA)'],
+      body: shown.map((f) => [dateFr(f.date), fraisCategories[f.kind].label, f.category, [chName(f.chantierId), empName(f.employeeId)].filter(Boolean).join(' · '), f.payMode, f.note, money(f.amount)]),
+      foot: ['', '', '', '', '', 'TOTAL', money(total)],
+      align: ['left', 'left', 'left', 'left', 'left', 'left', 'right'],
+    })
+  }
+
   return (
     <>
       <PageHeader title="Frais" subtitle={chantierFilter ? `Chantier : ${chName(chantierFilter)}` : 'Frais de chantier, frais généraux et avances aux employés.'}
         actions={<>
+          <button className="btn-ghost" onClick={exportPdf}><Icon name="download" size={16} /> PDF</button>
           <button className="btn-ghost" onClick={exportExcel}><Icon name="sheet" size={16} /> Excel</button>
           <button className="btn-volt" onClick={() => setEdit(newFrais(chantierFilter ? 'chantier' : 'chantier', chantierFilter))}><Icon name="plus" size={16} /> Nouveau frais</button>
         </>} />
