@@ -55,9 +55,12 @@ export function downloadXlsx(fileName: string, sheets: Sheet[]) {
   downloadBlob(new Blob([zip(files)], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), `${fileName}.xlsx`)
 }
 
+/** Nom de fichier sans accents : certains systèmes ignorent sinon le nom (fichier « download »). */
+export const safeFileName = (n: string) => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w .()-]/g, '-')
+
 export function downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob)
-  const a = document.createElement('a'); a.href = url; a.download = fileName
+  const a = document.createElement('a'); a.href = url; a.download = safeFileName(fileName)
   document.body.appendChild(a); a.click(); a.remove()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

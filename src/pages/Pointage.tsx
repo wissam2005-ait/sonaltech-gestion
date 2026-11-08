@@ -59,7 +59,7 @@ export default function PointagePage() {
   async function exportPdf() {
     const totals = shown.map((e) => stats(e.id!))
     tablePdf({
-      company: await getCompany(), landscape: true, fileName: `Pointage et salaires ${month}.pdf`,
+      company: await getCompany(), landscape: true, fileName: `Sonaltech Électrique - Pointage et salaires ${month}.pdf`,
       title: `Pointage et salaires — ${monthLabel(month)}`, subtitle: 'P présent · D demi-journée · A absent · C congé · M maladie',
       head: ['Employé', ...days.map((d) => d.slice(8)), 'Jours', 'Tarif/j', 'Brut', 'Avances', 'Net'],
       body: shown.map((e, i) => [e.name, ...days.map((d) => get(e.id!, d)?.status ?? ''), totals[i].worked, money(e.dailyRate), money(totals[i].gross), totals[i].adv ? money(totals[i].adv) : '', money(totals[i].net)]),

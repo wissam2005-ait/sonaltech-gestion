@@ -9,7 +9,7 @@ import '@fontsource/barlow-condensed/600.css'
 import '@fontsource/barlow-condensed/700.css'
 import './index.css'
 import Layout from './components/Layout'
-import { seedIfEmpty } from './lib/db'
+import { seedIfEmpty, upgradeCompanyName } from './lib/db'
 import { askPersistentStorage } from './lib/backup'
 import Dashboard from './pages/Dashboard'
 import DocsList from './pages/DocsList'
@@ -34,7 +34,7 @@ function DocEditRoute() {
 }
 
 void askPersistentStorage()
-void seedIfEmpty().then(startSync)
+void seedIfEmpty().then(upgradeCompanyName).then(startSync)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

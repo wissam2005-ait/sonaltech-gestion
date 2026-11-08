@@ -12,7 +12,7 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
   return (
     <article className="mx-auto w-full max-w-[210mm] bg-white px-[10mm] py-[8mm] text-[12px] text-black print:max-w-none print:p-0">
       <header className="flex justify-center">
-        <img src={logoUrl} alt={company.name} className="h-auto w-[115mm] max-w-full" />
+        <img src={logoUrl} alt={company.name} className="h-auto w-[150mm] max-w-full" />
       </header>
 
       <div className="mt-6 flex items-end justify-between px-[8%] text-[14px] font-semibold">
