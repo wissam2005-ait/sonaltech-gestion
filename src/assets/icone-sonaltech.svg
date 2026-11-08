@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 148" width="280" height="296">
+  <style> .n{font-family:'BC','Barlow Condensed','Arial Narrow',Arial,sans-serif;font-weight:700}</style>
+  <g transform="translate(2,6)">
+    <g transform="rotate(-24 66 74)">
+      <!-- anneau arrière clair -->
+      <path d="M 96 56 A 40 20 0 0 0 30 70" fill="none" stroke="#9aa0a6" stroke-width="7" stroke-linecap="round"/>
+      <!-- anneau avant foncé -->
+      <path d="M 112 60 A 50 27 0 1 1 26 58" fill="none" stroke="#4b5056" stroke-width="11" stroke-linecap="round"/>
+    </g>
+    <!-- éclair : corps épais, pointe fine vers le bas -->
+    <path transform="translate(70 74) scale(0.74) translate(-78 -69)" d="M 88 2 L 122 2 L 90 48 L 114 48 L 34 136 L 60 72 L 38 72 Z" fill="#e31e24" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" paint-order="stroke"/>
+  </g>
+</svg>
