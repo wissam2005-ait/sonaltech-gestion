@@ -7,7 +7,17 @@ Application qui remplace le fichier Excel de l'entreprise : **devis, factures, b
 - **Les données restent sur l'ordinateur** du client (base du navigateur). Aucune donnée n'est envoyée sur internet.
 - Impression / PDF au format A4 et export **Excel** (avec formules) pour chaque document, le pointage et les frais.
 
-## Installation chez le client (une seule fois, avec internet)
+## Version clé USB (sans internet, sans installation)
+
+```bash
+npm run build:usb   # → dist-usb/Sonaltech.html (un seul fichier, ~1 Mo)
+```
+
+Copier `Sonaltech.html` sur le bureau du client et l'ouvrir avec **Google Chrome** (clic droit → Ouvrir avec → Chrome).
+Aucune connexion n'est jamais nécessaire. Les données sont gardées par Chrome sur cet ordinateur : toujours ouvrir
+le fichier avec Chrome, et faire des sauvegardes régulières (menu Sauvegarde).
+
+## Installation depuis internet (version en ligne)
 
 1. Ouvrir l'adresse du site dans **Google Chrome** (ou Edge).
 2. Cliquer sur l'icône **Installer** (⊕) à droite de la barre d'adresse → **Installer**.
