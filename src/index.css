@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { @apply bg-panel font-sans text-ink antialiased; font-feature-settings: 'tnum' 1; }
+  h1, h2, h3 { @apply font-display; }
+  :focus-visible { outline: 3px solid #f5d300; outline-offset: 2px; }
+}
+
+@layer components {
+  .input { @apply block w-full rounded-md border border-line bg-white px-3 py-2 text-[15px] text-ink placeholder:text-ink/35 focus:border-ink focus:outline-none; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition disabled:opacity-50; }
+  .btn-primary { @apply btn bg-ink text-white hover:bg-navy; }
+  .btn-volt { @apply btn bg-volt text-ink hover:brightness-95; }
+  .btn-ghost { @apply btn border border-line bg-white text-ink hover:border-ink; }
+  .btn-danger { @apply btn border border-red-200 bg-white text-red-700 hover:bg-red-50; }
+  .card { @apply rounded-xl border border-line bg-white shadow-lift; }
+  .tbl { @apply w-full border-collapse text-sm; }
+  .tbl thead th { @apply border-b border-line bg-[#f6f8fa] px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-ink/60; }
+  .tbl tbody td { @apply border-b border-line/70 px-3 py-2 align-middle; }
+  .tbl tbody tr:hover td { @apply bg-[#fafbfc]; }
+  .num { @apply whitespace-nowrap text-right tabular-nums; }
+  .label { @apply mb-1 block text-sm font-semibold text-ink/80; }
+}
+
+@page { size: A4; margin: 10mm; }
+@media print {
+  body { background: white; }
+  .no-print { display: none !important; }
+}
