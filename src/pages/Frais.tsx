@@ -37,7 +37,7 @@ export default function FraisPage() {
 
   async function exportPdf() {
     tablePdf({
-      company: await getCompany(), fileName: `Frais ${month === 'all' ? 'toutes periodes' : month}.pdf`,
+      company: await getCompany(), fileName: `Sonaltech Électrique - Frais ${month === 'all' ? 'toutes périodes' : month}.pdf`,
       title: `État des frais — ${month === 'all' ? 'toutes périodes' : monthLabel(month)}`, subtitle: chantierFilter ? `Chantier : ${chName(chantierFilter)}` : undefined,
       head: ['Date', 'Type', 'Catégorie', 'Chantier / employé', 'Paiement', 'Note', 'Montant (DA)'],
       body: shown.map((f) => [dateFr(f.date), fraisCategories[f.kind].label, f.category, [chName(f.chantierId), empName(f.employeeId)].filter(Boolean).join(' · '), f.payMode, f.note, money(f.amount)]),

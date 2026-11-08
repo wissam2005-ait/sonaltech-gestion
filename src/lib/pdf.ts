@@ -7,10 +7,10 @@ import autoTable from 'jspdf-autotable'
 import { db, docLabels, docTotals, getCompany, lineTotal, type Client, type Company, type Doc } from './db'
 import { amountInWords, dateFr, money, qtyFmt } from './format'
 import { docRef, sumWordsLabel } from './docs'
-import { downloadBlob } from './xlsx'
+import { downloadBlob, safeFileName } from './xlsx'
 import logoUrl from '../assets/logo-sonaltech.png'
 
-const LOGO_RATIO = 276 / 1200
+const LOGO_RATIO = 211 / 1200
 let logoCache: Promise<string> | null = null
 /** Logo en data URL (disponible hors ligne : inclus dans l'application). */
 function logoData() {
@@ -23,7 +23,7 @@ const HEAD: [number, number, number] = [197, 211, 232]
 const M = 12            // marge (mm)
 const W = 210 - 2 * M   // largeur utile
 
-export const pdfName = (d: Doc) => `${docLabels[d.type].one} ${docRef(d).replace('/', '-')}.pdf`
+export const pdfName = (d: Doc) => `Sonaltech Électrique - ${docLabels[d.type].one} ${docRef(d).replace('/', '-')}.pdf`
 
 /** Les espaces fines (milliers) ne sont pas dans les polices PDF standard */
 const t = (s: string | number | undefined | null) => String(s ?? '').replace(/[\u202f\u00a0]/g, ' ')
@@ -38,8 +38,8 @@ function footer(pdf: jsPDF, label: string) {
 }
 
 async function header(pdf: jsPDF) {
-  const w = 112, h = w * LOGO_RATIO
-  pdf.addImage(await logoData(), 'PNG', 105 - w / 2, 6, w, h)
+  const w = 150, h = w * LOGO_RATIO
+  pdf.addImage(await logoData(), 'PNG', 105 - w / 2, 7, w, h, 'logo', 'FAST')
 }
 
 export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?: Client; chantierName?: string }): Promise<jsPDF> {
@@ -47,7 +47,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   const client = given?.client ?? (doc.clientId ? await db.clients.get(doc.clientId) : undefined)
   const chantierName = given?.chantierName ?? (doc.chantierId ? (await db.chantiers.get(doc.chantierId))?.name : undefined)
   const tot = docTotals(doc)
-  const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4', compress: true })
   pdf.setProperties({ title: pdfName(doc).replace('.pdf', ''), author: company.name, creator: `${company.name} — Gestion` })
   await header(pdf)
 
@@ -153,8 +153,8 @@ export async function openDocPdf(doc: Doc) {
 
 /** Simple tableau en PDF (pointage / salaires, frais). */
 export async function tablePdf(opts: { title: string; subtitle?: string; head: string[]; body: (string | number)[][]; foot?: (string | number)[]; align?: ('left' | 'right' | 'center')[]; company: Company; landscape?: boolean; fileName: string }) {
-  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: opts.landscape ? 'landscape' : 'portrait' })
-  pdf.addImage(await logoData(), 'PNG', M, 6, 56, 56 * LOGO_RATIO)
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: opts.landscape ? 'landscape' : 'portrait', compress: true })
+  pdf.addImage(await logoData(), 'PNG', M, 6, 80, 80 * LOGO_RATIO, 'logo', 'FAST')
   pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(...INK); pdf.text(t(opts.title), M, 27)
   if (opts.subtitle) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(90); pdf.text(t(opts.subtitle), M, 32) }
   const columnStyles = Object.fromEntries((opts.align ?? []).map((a, i) => [i, { halign: a }]))
@@ -178,7 +178,7 @@ export async function zipPdfs(docs: Doc[], fileName: string, onProgress?: (n: nu
   const files: { name: string; data: Uint8Array }[] = []
   for (const [i, d] of docs.entries()) {
     const pdf = await buildDocPdf(d, { company, client: clients.find((c) => c.id === d.clientId), chantierName: chantiers.find((c) => c.id === d.chantierId)?.name })
-    files.push({ name: `${docLabels[d.type].many}/${pdfName(d)}`, data: new Uint8Array(pdf.output('arraybuffer')) })
+    files.push({ name: `${docLabels[d.type].many}/${safeFileName(pdfName(d))}`, data: new Uint8Array(pdf.output('arraybuffer')) })
     onProgress?.(i + 1)
   }
   downloadBlob(new Blob([zip(files)], { type: 'application/zip' }), fileName)

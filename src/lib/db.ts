@@ -162,7 +162,7 @@ export async function restore(item: TrashItem) {
 export const defaultCompany: Company = {
   name: 'Sonaltech Électrique',
   subtitle: "Entreprise d'électricité générale",
-  legalName: 'ETS SONALTECH ELECTRIQUE',
+  legalName: 'SONALTECH ÉLECTRIQUE',
   activity: "Entreprise de travaux d'électricité",
   address: 'Village El Ghaba, CNE Smaoun, W. de Béjaïa',
   rc: '22A5815909-00/06',
@@ -194,6 +194,13 @@ export async function seedIfEmpty() {
       if ((await db.articles.count()) === 0) await db.articles.bulkPut(seedArticles.map((a, i) => ({ ...a, id: i + 1, _seed: 1 }) as Article))
     })
   }
+}
+
+/** Ancienne valeur par défaut remplacée par « SONALTECH ÉLECTRIQUE » (si le client ne l'a pas personnalisée). */
+export async function upgradeCompanyName() {
+  const s = await db.settings.get('company')
+  const v = s?.value as Partial<Company> | undefined
+  if (v?.legalName === 'ETS SONALTECH ELECTRIQUE') await db.settings.put({ key: 'company', value: { ...v, legalName: defaultCompany.legalName } })
 }
 
 export async function getCompany(): Promise<Company> {

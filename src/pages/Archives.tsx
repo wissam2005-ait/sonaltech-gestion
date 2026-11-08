@@ -28,7 +28,7 @@ export default function Archives() {
 
   async function zipAll() {
     setProgress(`0 / ${shown.length}`)
-    try { await zipPdfs(shown, `Documents ${type === 'all' ? '' : docLabels[type].many + ' '}${label}.zip`, (n) => setProgress(`${n} / ${shown.length}`)) } finally { setProgress(null) }
+    try { await zipPdfs(shown, `Sonaltech Électrique - Documents ${type === 'all' ? '' : docLabels[type].many + ' '}${label}.zip`, (n) => setProgress(`${n} / ${shown.length}`)) } finally { setProgress(null) }
   }
 
   return (
