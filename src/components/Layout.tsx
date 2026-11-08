@@ -4,6 +4,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { Icon, type IconName } from './icons'
 import { db, getCompany } from '../lib/db'
 import { backupAge } from '../lib/backup'
+import SyncBadge from './SyncBadge'
+import { isLoggedIn } from '../lib/sync'
 
 const nav: { title: string; items: { to: string; label: string; icon: IconName; end?: boolean }[] }[] = [
   { title: 'Pilotage', items: [{ to: '/', label: 'Tableau de bord', icon: 'dashboard', end: true }] },
@@ -25,6 +27,7 @@ const nav: { title: string; items: { to: string; label: string; icon: IconName; 
   ] },
   { title: 'Réglages', items: [
     { to: '/parametres', label: 'Paramètres', icon: 'settings' },
+    { to: '/corbeille', label: 'Corbeille', icon: 'trash' },
     { to: '/sauvegarde', label: 'Sauvegarde', icon: 'download' },
   ] },
 ]
@@ -36,7 +39,7 @@ export default function Layout() {
   const company = useLiveQuery(getCompany, [], undefined)
   const age = useLiveQuery(backupAge, [], null)
   const hasData = useLiveQuery(async () => (await db.docs.count()) + (await db.frais.count()) + (await db.pointages.count()) > 0, [], false)
-  const backupLate = hasData && (age === null || age > 7)
+  const backupLate = hasData && !isLoggedIn() && (age === null || age > 7)
 
   const sidebar = (
     <nav aria-label="Menu" className="flex h-full flex-col gap-5 overflow-y-auto px-3 py-5">
@@ -62,11 +65,13 @@ export default function Layout() {
           <div className="leading-tight"><p className="font-display text-xl font-bold">{company?.name ?? 'Sonaltech'}</p><p className="text-xs text-white/50">Gestion · hors ligne</p></div>
         </div>
         {sidebar}
+        <div className="border-t border-white/10 p-2"><SyncBadge /></div>
       </aside>
 
       <div className="no-print sticky top-0 z-40 flex items-center justify-between bg-ink px-4 py-3 text-white lg:hidden">
         <p className="flex items-center gap-2 font-display text-xl font-bold"><Icon name="bolt" size={18} className="text-volt" />{company?.name ?? 'Sonaltech'}</p>
-        <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}><Icon name={open ? 'x' : 'menu'} size={26} /></button>
+        <div className="flex items-center gap-2"><div className="max-w-[170px]"><SyncBadge compact /></div>
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}><Icon name={open ? 'x' : 'menu'} size={26} /></button></div>
       </div>
       {open && <div className="no-print fixed inset-x-0 bottom-0 top-[52px] z-40 bg-ink text-white lg:hidden">{sidebar}</div>}
 

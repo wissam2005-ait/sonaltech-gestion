@@ -74,4 +74,4 @@ export function Badge({ children, tone = 'neutral' }: { children: ReactNode; ton
 }
 
 /** Confirmation simple avant une suppression */
-export const confirmDelete = (what: string) => window.confirm(`Supprimer ${what} ? Cette action est définitive.`)
+export const confirmDelete = (what: string) => window.confirm(`Supprimer ${what} ? (récupérable dans la Corbeille)`)

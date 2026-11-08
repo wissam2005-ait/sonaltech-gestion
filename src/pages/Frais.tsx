@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, fraisCategories, type Frais, type FraisKind } from '../lib/db'
+import { db, fraisCategories, remove, type Frais, type FraisKind } from '../lib/db'
 import { currentMonth, dateFr, money, monthLabel, parseNum, shiftMonth, todayIso } from '../lib/format'
 import { downloadXlsx, ST, type Sheet } from '../lib/xlsx'
 import { Empty, Field, Modal, PageHeader, confirmDelete } from '../components/ui'
@@ -61,7 +61,7 @@ export default function FraisPage() {
                 <td>{[chName(f.chantierId), empName(f.employeeId)].filter(Boolean).join(' · ')}</td><td className="max-w-[220px] truncate text-ink/70">{f.note}</td>
                 <td className="num font-semibold">{money(f.amount)}</td>
                 <td className="text-right"><button className="p-1 text-ink/50 hover:text-ink" onClick={() => setEdit(f)}><Icon name="edit" size={16} /></button>
-                  <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete('ce frais')) await db.frais.delete(f.id!) }}><Icon name="trash" size={16} /></button></td></tr>
+                  <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete('ce frais')) await remove('frais', [f.id!]) }}><Icon name="trash" size={16} /></button></td></tr>
             ))}</tbody></table></div>
           <aside className="card h-fit p-5">
             <p className="text-sm text-ink/60">Total</p><p className="font-display text-3xl font-bold">{money(total)} DA</p>

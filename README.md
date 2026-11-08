@@ -4,7 +4,10 @@ Application qui remplace le fichier Excel de l'entreprise : **devis, factures, b
 (au format habituel de l'entreprise), **pointage** des employés, **salaires**, **frais** et **bénéfice par chantier**.
 
 - **Fonctionne sans internet** : après la première ouverture, tout est gardé sur l'ordinateur.
-- **Les données restent sur l'ordinateur** du client (base du navigateur). Aucune donnée n'est envoyée sur internet.
+- **Tout est enregistré sur le site** (Netlify Blobs) dès qu'il y a internet, et retrouvé sur tous les appareils
+  connectés avec le mot de passe de l'entreprise. Sans internet, les modifications attendent sur l'appareil.
+- **Rien n'est jamais effacé du site** : une suppression va dans la Corbeille (restaurable), et une copie complète
+  des données est gardée chaque jour.
 - Impression / PDF au format A4 et export **Excel** (avec formules) pour chaque document, le pointage et les frais.
 
 ## Version clé USB (sans internet, sans installation)
@@ -34,9 +37,10 @@ PC, puis **Sauvegarde → Restaurer**. Ne jamais effacer les « données de navi
 
 ```bash
 npm install
+APP_PASSWORD=test-local-2026 node --experimental-strip-types server/dev-server.mjs   # API locale (port 8787)
 npm run dev      # http://localhost:5173
 npm run build    # version de production dans dist/
 ```
 
-Pile : React 18, TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), vite-plugin-pwa.
+Pile : React 18, TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), vite-plugin-pwa, Netlify Functions + Blobs (`netlify/functions/api.mts`, logique dans `server/core.ts`).
 Contenu par défaut (coordonnées, catalogue) : `src/lib/db.ts`.

@@ -23,6 +23,8 @@ import PointagePage from './pages/Pointage'
 import FraisPage from './pages/Frais'
 import Parametres from './pages/Parametres'
 import Sauvegarde from './pages/Sauvegarde'
+import Corbeille from './pages/Corbeille'
+import { startSync } from './lib/sync'
 
 /** Chaque document a son propre éditeur : rien ne reste de l'écran précédent. */
 function DocEditRoute() {
@@ -30,8 +32,8 @@ function DocEditRoute() {
   return <DocEdit key={id} />
 }
 
-void seedIfEmpty()
 void askPersistentStorage()
+void seedIfEmpty().then(startSync)
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -51,6 +53,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="frais" element={<FraisPage />} />
           <Route path="parametres" element={<Parametres />} />
           <Route path="sauvegarde" element={<Sauvegarde />} />
+          <Route path="corbeille" element={<Corbeille />} />
         </Route>
       </Routes>
     </HashRouter>

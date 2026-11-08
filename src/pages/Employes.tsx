@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Employee } from '../lib/db'
+import { db, remove, type Employee } from '../lib/db'
 import { money, parseNum } from '../lib/format'
 import { Badge, Empty, Field, Modal, PageHeader, confirmDelete } from '../components/ui'
 import { Icon } from '../components/icons'
@@ -19,7 +19,7 @@ export default function Employes() {
             <tr key={e.id} className={e.active ? '' : 'opacity-60'}><td className="font-semibold">{e.name}</td><td>{e.position}</td><td>{e.phone}</td><td className="num">{money(e.dailyRate)} DA</td>
               <td>{e.active ? <Badge tone="green">Actif</Badge> : <Badge>Parti</Badge>}</td>
               <td className="text-right"><button className="p-1 text-ink/50 hover:text-ink" onClick={() => setEdit(e)}><Icon name="edit" size={16} /></button>
-                <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`${e.name} et tout son pointage`)) { await db.pointages.where('employeeId').equals(e.id!).delete(); await db.employees.delete(e.id!) } }}><Icon name="trash" size={16} /></button></td></tr>
+                <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`${e.name} et tout son pointage`)) { await remove('pointages', await db.pointages.where('employeeId').equals(e.id!).primaryKeys()); await remove('employees', [e.id!]) } }}><Icon name="trash" size={16} /></button></td></tr>
           ))}</tbody></table></div>
       )}
       <Modal open={!!edit} title={edit?.id ? 'Modifier l’employé' : 'Nouvel employé'} onClose={() => setEdit(null)}>

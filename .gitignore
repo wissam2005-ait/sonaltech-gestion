@@ -2,3 +2,5 @@ node_modules
 dist
 dev-dist
 dist-usb
+.dev-store.json
+.netlify

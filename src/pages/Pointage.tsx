@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, presenceLabels, type Presence } from '../lib/db'
+import { db, presenceLabels, remove, type Presence } from '../lib/db'
 import { currentMonth, daysOfMonth, isWeekend, money, monthLabel, shiftMonth, todayIso } from '../lib/format'
 import { downloadXlsx, ref, ST, type Sheet } from '../lib/xlsx'
 import { Empty, PageHeader } from '../components/ui'
@@ -34,7 +34,7 @@ export default function PointagePage() {
     const next = cycle[(cycle.indexOf(cur?.status ?? null) + 1) % cycle.length]
     const id = `${eid}|${d}`
     if (next) await db.pointages.put({ id, employeeId: eid, date: d, status: next, chantierId: cur?.chantierId ?? chantierId })
-    else await db.pointages.delete(id)
+    else await remove('pointages', [id])
   }
   async function allPresent(d: string) {
     await db.pointages.bulkPut(shown.filter((e) => e.active && !get(e.id!, d)).map((e) => ({ id: `${e.id}|${d}`, employeeId: e.id!, date: d, status: 'P' as Presence, chantierId })))
