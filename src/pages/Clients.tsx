@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Client } from '../lib/db'
+import { db, remove, type Client } from '../lib/db'
 import { Empty, Field, Modal, PageHeader, confirmDelete } from '../components/ui'
 import { Icon } from '../components/icons'
 
@@ -38,7 +38,7 @@ export default function Clients() {
           <tbody>{shown.map((c) => (
             <tr key={c.id}><td className="font-semibold">{c.name}</td><td>{c.address}</td><td>{c.phone}</td><td>{c.nif}</td>
               <td className="text-right"><button className="p-1 text-ink/50 hover:text-ink" onClick={() => setEdit(c)}><Icon name="edit" size={16} /></button>
-                <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`le client ${c.name}`)) await db.clients.delete(c.id!) }}><Icon name="trash" size={16} /></button></td></tr>
+                <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`le client ${c.name}`)) await remove('clients', [c.id!]) }}><Icon name="trash" size={16} /></button></td></tr>
           ))}</tbody></table></div>
       )}
       <Modal open={!!edit} title={edit?.id ? 'Modifier le client' : 'Nouveau client'} onClose={() => setEdit(null)} wide>

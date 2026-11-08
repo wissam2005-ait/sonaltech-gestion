@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, docLabels, docTotals, getCompany, lineTotal, paidAmount, round2, type Doc, type DocType, type Line } from '../lib/db'
+import { db, docLabels, docTotals, getCompany, lineTotal, paidAmount, remove as removeRecord, round2, type Doc, type DocType, type Line } from '../lib/db'
 import { createDoc, docRef, exportDocExcel } from '../lib/docs'
 import { money, parseNum, todayIso } from '../lib/format'
 import PrintedDoc from '../components/PrintedDoc'
@@ -72,7 +72,7 @@ export default function DocEdit() {
   async function remove() {
     if (!confirmDelete(`${docLabels[doc!.type].one.toLowerCase()} ${docRef(doc!)}`)) return
     window.clearTimeout(timer.current)
-    await db.docs.delete(doc!.id!); navigate(`/documents/${doc!.type}`)
+    await db.docs.put(doc!); await removeRecord('docs', [doc!.id!]); navigate(`/documents/${doc!.type}`)
   }
   async function print() { await db.docs.put(doc!); setTab('preview'); setTimeout(() => window.print(), 150) }
 

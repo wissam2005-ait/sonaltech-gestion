@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, type Article } from '../lib/db'
+import { db, remove, type Article } from '../lib/db'
 import { money, parseNum } from '../lib/format'
 import { Field, Modal, PageHeader, confirmDelete } from '../components/ui'
 import { Icon } from '../components/icons'
@@ -20,7 +20,7 @@ export default function Catalogue() {
         <tbody>{shown.map((a) => (
           <tr key={a.id}><td className="font-mono text-sm font-semibold">{a.designation}</td><td>{a.unit}</td><td className="num">{money(a.price)}</td>
             <td className="text-right"><button className="p-1 text-ink/50 hover:text-ink" onClick={() => setEdit(a)}><Icon name="edit" size={16} /></button>
-              <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`« ${a.designation} »`)) await db.articles.delete(a.id!) }}><Icon name="trash" size={16} /></button></td></tr>
+              <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`« ${a.designation} »`)) await remove('articles', [a.id!]) }}><Icon name="trash" size={16} /></button></td></tr>
         ))}</tbody></table></div>
       <Modal open={!!edit} title={edit?.id ? 'Modifier l’article' : 'Nouvel article'} onClose={() => setEdit(null)}>
         {edit && <ArticleForm a={edit} onDone={() => setEdit(null)} />}

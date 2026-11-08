@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, docLabels, docTotals, presenceLabels, type DocType } from '../lib/db'
+import { db, docLabels, docTotals, presenceLabels, remove, type DocType } from '../lib/db'
 import { createDoc, docRef } from '../lib/docs'
 import { dateFr, money } from '../lib/format'
 import { Badge, Modal, PageHeader, Stat, confirmDelete } from '../components/ui'
@@ -40,7 +40,7 @@ export default function ChantierDetail() {
           <button className="btn-ghost" onClick={() => newDoc('attachement')}>+ Attachement</button>
           <button className="btn-primary" onClick={() => newDoc('facture')}>+ Facture</button>
           <button className="btn-ghost" onClick={() => setEdit(true)}><Icon name="edit" size={16} /></button>
-          <button className="btn-danger" onClick={async () => { if (confirmDelete(`le chantier ${c.name} (les documents et frais sont conservés)`)) { await db.chantiers.delete(id); navigate('/chantiers') } }}><Icon name="trash" size={16} /></button>
+          <button className="btn-danger" onClick={async () => { if (confirmDelete(`le chantier ${c.name} (les documents et frais sont conservés)`)) { await remove('chantiers', [id]); navigate('/chantiers') } }}><Icon name="trash" size={16} /></button>
         </>} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

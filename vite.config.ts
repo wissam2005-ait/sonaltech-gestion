@@ -10,6 +10,9 @@ export default defineConfig(({ mode }) => mode === 'usb' ? {
   plugins: [react(), viteSingleFile()],
   build: { outDir: 'dist-usb', assetsInlineLimit: 100_000_000, chunkSizeWarningLimit: 5000 },
 } : {
+  // Développement : /api est relayé vers le serveur de test local (server/dev-server.mjs)
+  server: { proxy: { '/api': 'http://localhost:8787' } },
+  preview: { proxy: { '/api': 'http://localhost:8787' } },
   plugins: [
     react(),
     VitePWA({

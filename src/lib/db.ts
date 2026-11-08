@@ -1,4 +1,4 @@
-import Dexie, { type Table } from 'dexie'
+import Dexie, { type IndexableType, type Table } from 'dexie'
 
 /* ------------------------------------------------------------------ */
 /* Toutes les données sont enregistrées sur CET ordinateur (IndexedDB). */
@@ -57,6 +57,15 @@ export interface Frais {
 
 export interface Setting { key: string; value: unknown }
 
+/** Corbeille : copie de tout ce qui a été supprimé (restaurable, et conservé sur le site). */
+export interface TrashItem { key: string; table: SyncTable; id: string | number; record: Record<string, unknown>; deletedAt: number; _dirty: 0 | 1 }
+
+/** Tables enregistrées sur le site. */
+export const SYNC_TABLES = ['clients', 'chantiers', 'articles', 'docs', 'employees', 'pointages', 'frais', 'settings'] as const
+export type SyncTable = (typeof SYNC_TABLES)[number]
+/** Réglages propres à cet appareil, jamais envoyés sur le site */
+export const LOCAL_SETTINGS = new Set(['last-backup'])
+
 class GestionDB extends Dexie {
   clients!: Table<Client, number>
   chantiers!: Table<Chantier, number>
@@ -66,6 +75,7 @@ class GestionDB extends Dexie {
   pointages!: Table<Pointage, string>
   frais!: Table<Frais, number>
   settings!: Table<Setting, string>
+  trash!: Table<TrashItem, string>
 
   constructor() {
     super('sonaltech-gestion')
@@ -79,10 +89,73 @@ class GestionDB extends Dexie {
       frais: '++id, date, kind, chantierId, employeeId',
       settings: 'key',
     })
+    // v2 : synchronisation avec le site (_dirty = modifié, pas encore envoyé) + corbeille
+    this.version(2).stores({
+      clients: '++id, name, _dirty',
+      chantiers: '++id, name, clientId, status, _dirty',
+      articles: '++id, designation, _dirty',
+      docs: '++id, type, [type+year], clientId, chantierId, date, status, _dirty',
+      employees: '++id, name, active, _dirty',
+      pointages: 'id, employeeId, date, chantierId, _dirty',
+      frais: '++id, date, kind, chantierId, employeeId, _dirty',
+      settings: 'key, _dirty',
+      trash: 'key, table, deletedAt, _dirty',
+    })
   }
 }
 
 export const db = new GestionDB()
+
+/* ------------------------------ Suivi des modifications ------------------------------ */
+// Identifiants uniques entre appareils (plus de collision quand deux appareils créent hors ligne)
+export const newId = () => Date.now() * 1000 + Math.floor(Math.random() * 1000)
+let onLocalChange: () => void = () => {}
+export const setLocalChangeListener = (fn: () => void) => { onLocalChange = fn }
+
+for (const name of SYNC_TABLES) {
+  const table = db.table(name) as Table<Record<string, unknown>, IndexableType>
+  const autoId = name !== 'pointages' && name !== 'settings'
+  table.hook('creating', function (_pk, obj) {
+    if (obj._sync === 1) { delete obj._sync; return }    // reçu du site : déjà à jour
+    // Données de départ : date « ancienne », pour ne jamais remplacer ce qui est déjà sur le site
+    const seed = !!obj._seed
+    delete obj._seed
+    obj.updatedAt = seed ? 1 : Date.now()
+    obj._dirty = name === 'settings' && LOCAL_SETTINGS.has(obj.key as string) ? 0 : 1
+    setTimeout(() => onLocalChange(), 0)
+    if (autoId && obj.id == null) { const id = newId(); obj.id = id; return id }
+  })
+  table.hook('updating', function (modifications, _pk, obj) {
+    const mods = modifications as Record<string, unknown>
+    if (mods._sync === 1) return { _sync: undefined }    // écriture venant de la synchronisation
+    setTimeout(() => onLocalChange(), 0)
+    return { updatedAt: Date.now(), _dirty: name === 'settings' && LOCAL_SETTINGS.has(obj.key as string) ? 0 : 1, _sync: undefined }
+  })
+}
+
+/** Supprime un enregistrement : il part dans la corbeille (et reste sur le site, marqué supprimé). */
+export async function remove(table: SyncTable, ids: (string | number)[]) {
+  await db.transaction('rw', db.table(table), db.trash, async () => {
+    for (const id of ids) {
+      const rec = await db.table(table).get(id)
+      if (!rec) continue
+      const { _dirty: _d, ...record } = rec
+      void _d
+      await db.trash.put({ key: `${table}|${id}`, table, id, record, deletedAt: Date.now(), _dirty: 1 })
+      await db.table(table).delete(id)
+    }
+  })
+  onLocalChange()
+}
+
+/** Restaure un élément de la corbeille. */
+export async function restore(item: TrashItem) {
+  await db.transaction('rw', db.table(item.table), db.trash, async () => {
+    await db.table(item.table).put({ ...item.record })   // nouvelle date → envoyé au site comme « non supprimé »
+    await db.trash.delete(item.key)
+  })
+  onLocalChange()
+}
 
 /* ------------------------------ Valeurs de départ ------------------------------ */
 
@@ -116,8 +189,9 @@ const seedArticles: Omit<Article, 'id'>[] = [
 export async function seedIfEmpty() {
   if (!(await db.settings.get('company'))) {
     await db.transaction('rw', db.settings, db.articles, async () => {
-      await db.settings.put({ key: 'company', value: defaultCompany })
-      if ((await db.articles.count()) === 0) await db.articles.bulkAdd(seedArticles)
+      // Identifiants fixes (1, 2, 3…) : deux appareils créent les mêmes articles au lieu de les doubler
+      await db.settings.put({ key: 'company', value: defaultCompany, _seed: 1 } as Setting)
+      if ((await db.articles.count()) === 0) await db.articles.bulkPut(seedArticles.map((a, i) => ({ ...a, id: i + 1, _seed: 1 }) as Article))
     })
   }
 }
