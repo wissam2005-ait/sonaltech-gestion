@@ -3,6 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { db, presenceLabels, remove, type Presence } from '../lib/db'
 import { currentMonth, daysOfMonth, isWeekend, money, monthLabel, shiftMonth, todayIso } from '../lib/format'
 import { downloadXlsx, ref, ST, type Sheet } from '../lib/xlsx'
+import { tablePdf } from '../lib/pdf'
+import { getCompany } from '../lib/db'
 import { Empty, PageHeader } from '../components/ui'
 import { Icon } from '../components/icons'
 
@@ -54,11 +56,24 @@ export default function PointagePage() {
     downloadXlsx(`Pointage ${month}`, [{ name: 'Pointage', rows, widths: [24, ...days.map(() => 3.6), 7, 10, 12, 11, 12] }])
   }
 
+  async function exportPdf() {
+    const totals = shown.map((e) => stats(e.id!))
+    tablePdf({
+      company: await getCompany(), landscape: true, fileName: `Pointage et salaires ${month}.pdf`,
+      title: `Pointage et salaires — ${monthLabel(month)}`, subtitle: 'P présent · D demi-journée · A absent · C congé · M maladie',
+      head: ['Employé', ...days.map((d) => d.slice(8)), 'Jours', 'Tarif/j', 'Brut', 'Avances', 'Net'],
+      body: shown.map((e, i) => [e.name, ...days.map((d) => get(e.id!, d)?.status ?? ''), totals[i].worked, money(e.dailyRate), money(totals[i].gross), totals[i].adv ? money(totals[i].adv) : '', money(totals[i].net)]),
+      foot: ['Total', ...days.map(() => ''), totals.reduce((s, x) => s + x.worked, 0), '', money(totals.reduce((s, x) => s + x.gross, 0)), money(totals.reduce((s, x) => s + x.adv, 0)), money(totals.reduce((s, x) => s + x.net, 0))],
+      align: ['left', ...days.map(() => 'center' as const), 'right', 'right', 'right', 'right', 'right'],
+    })
+  }
+
   return (
     <>
       <PageHeader title="Pointage" subtitle="Cliquez sur une case pour changer : Présent → Demi-journée → Absent → Congé → Maladie → vide."
         actions={<>
           <button className="btn-ghost" onClick={() => window.print()}><Icon name="print" size={16} /> Imprimer</button>
+          <button className="btn-volt" onClick={exportPdf}><Icon name="download" size={16} /> PDF</button>
           <button className="btn-ghost" onClick={exportExcel}><Icon name="sheet" size={16} /> Excel</button>
         </>} />
       <div className="no-print mb-4 flex flex-wrap items-end gap-3">

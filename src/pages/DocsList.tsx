@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, docLabels, docTotals, paidAmount, type Doc, type DocType } from '../lib/db'
 import { createDoc, docRef } from '../lib/docs'
+import { downloadDocPdf } from '../lib/pdf'
 import { dateFr, money } from '../lib/format'
 import { Badge, Empty, PageHeader } from '../components/ui'
 import { Icon } from '../components/icons'
@@ -49,7 +50,7 @@ export default function DocsList() {
       ) : (
         <div className="card overflow-x-auto">
           <table className="tbl min-w-[720px]">
-            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Objet / chantier</th><th className="!text-right">Total TTC</th><th>État</th></tr></thead>
+            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Objet / chantier</th><th className="!text-right">Total TTC</th><th>État</th><th /></tr></thead>
             <tbody>
               {shown.map((d) => {
                 const [s, tone] = statusLabel[d.status]
@@ -62,6 +63,7 @@ export default function DocsList() {
                     <td className="max-w-[260px] truncate text-ink/70">{d.object || chantiers?.find((c) => c.id === d.chantierId)?.name || ''}</td>
                     <td className="num font-semibold">{money(docTotals(d).ttc)}</td>
                     <td><Badge tone={tone}>{s}</Badge>{(type === 'facture' || type === 'bon') && d.status !== 'paye' && paidAmount(d) > 0 && <span className="ml-2 text-xs text-ink/60">reste {money(rest)}</span>}</td>
+                    <td className="text-right"><button title="Télécharger le PDF" className="rounded-md border border-line bg-white px-2 py-1 text-xs font-semibold hover:border-ink" onClick={(e) => { e.stopPropagation(); void downloadDocPdf(d) }}>PDF</button></td>
                   </tr>
                 )
               })}

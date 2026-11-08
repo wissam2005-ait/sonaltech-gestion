@@ -24,6 +24,7 @@ import FraisPage from './pages/Frais'
 import Parametres from './pages/Parametres'
 import Sauvegarde from './pages/Sauvegarde'
 import Corbeille from './pages/Corbeille'
+import Archives from './pages/Archives'
 import { startSync } from './lib/sync'
 
 /** Chaque document a son propre éditeur : rien ne reste de l'écran précédent. */
@@ -54,6 +55,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="parametres" element={<Parametres />} />
           <Route path="sauvegarde" element={<Sauvegarde />} />
           <Route path="corbeille" element={<Corbeille />} />
+          <Route path="archives" element={<Archives />} />
         </Route>
       </Routes>
     </HashRouter>

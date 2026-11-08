@@ -14,6 +14,7 @@ const nav: { title: string; items: { to: string; label: string; icon: IconName; 
     { to: '/documents/facture', label: 'Factures', icon: 'invoice' },
     { to: '/documents/bon', label: 'Bons pour', icon: 'doc' },
     { to: '/documents/attachement', label: 'Attachements', icon: 'sheet' },
+    { to: '/archives', label: 'Archives PDF', icon: 'download' },
   ] },
   { title: 'Chantiers', items: [
     { to: '/chantiers', label: 'Chantiers', icon: 'site' },
