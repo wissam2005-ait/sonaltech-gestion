@@ -5,6 +5,7 @@ import { Icon, type IconName } from './icons'
 import { db, getCompany } from '../lib/db'
 import { backupAge } from '../lib/backup'
 import SyncBadge from './SyncBadge'
+import iconUrl from '../assets/icone-sonaltech.svg'
 import { isLoggedIn } from '../lib/sync'
 
 const nav: { title: string; items: { to: string; label: string; icon: IconName; end?: boolean }[] }[] = [
@@ -62,7 +63,7 @@ export default function Layout() {
     <div className="min-h-screen lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="no-print sticky top-0 hidden h-screen flex-col bg-ink text-white lg:flex">
         <div className="flex items-center gap-2.5 border-b border-white/10 px-5 py-4">
-          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-volt text-ink"><Icon name="bolt" size={20} strokeWidth={2.2} /></span>
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-white p-0.5"><img src={iconUrl} alt="" className="h-full w-full" /></span>
           <div className="leading-tight"><p className="font-display text-xl font-bold">{company?.name ?? 'Sonaltech'}</p><p className="text-xs text-white/50">Gestion · hors ligne</p></div>
         </div>
         {sidebar}
@@ -70,7 +71,7 @@ export default function Layout() {
       </aside>
 
       <div className="no-print sticky top-0 z-40 flex items-center justify-between bg-ink px-4 py-3 text-white lg:hidden">
-        <p className="flex items-center gap-2 font-display text-xl font-bold"><Icon name="bolt" size={18} className="text-volt" />{company?.name ?? 'Sonaltech'}</p>
+        <p className="flex items-center gap-2 font-display text-xl font-bold"><span className="flex h-8 w-8 items-center justify-center rounded-md bg-white p-0.5"><img src={iconUrl} alt="" className="h-full w-full" /></span>{company?.name ?? 'Sonaltech'}</p>
         <div className="flex items-center gap-2"><div className="max-w-[170px]"><SyncBadge compact /></div>
         <button type="button" onClick={() => setOpen((o) => !o)} aria-label="Menu" aria-expanded={open}><Icon name={open ? 'x' : 'menu'} size={26} /></button></div>
       </div>

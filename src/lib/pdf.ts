@@ -8,8 +8,16 @@ import { db, docLabels, docTotals, getCompany, lineTotal, type Client, type Comp
 import { amountInWords, dateFr, money, qtyFmt } from './format'
 import { docRef, sumWordsLabel } from './docs'
 import { downloadBlob } from './xlsx'
+import logoUrl from '../assets/logo-sonaltech.png'
 
-const RED: [number, number, number] = [200, 16, 46]
+const LOGO_RATIO = 276 / 1200
+let logoCache: Promise<string> | null = null
+/** Logo en data URL (disponible hors ligne : inclus dans l'application). */
+function logoData() {
+  logoCache ??= fetch(logoUrl).then((r) => r.blob()).then((b) => new Promise<string>((ok, ko) => { const fr = new FileReader(); fr.onload = () => ok(fr.result as string); fr.onerror = ko; fr.readAsDataURL(b) }))
+  return logoCache
+}
+
 const INK: [number, number, number] = [11, 31, 51]
 const HEAD: [number, number, number] = [197, 211, 232]
 const M = 12            // marge (mm)
@@ -29,13 +37,9 @@ function footer(pdf: jsPDF, label: string) {
   }
 }
 
-function header(pdf: jsPDF, c: Company) {
-  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(26)
-  pdf.setTextColor(...RED); pdf.setDrawColor(90, 10, 20); pdf.setLineWidth(0.25)
-  pdf.text(t(c.name), 105, 20, { align: 'center', renderingMode: 'fillThenStroke' })
-  pdf.setFontSize(11); pdf.setTextColor(...INK)
-  const sub = t(c.subtitle.toUpperCase()), cs = 1.2
-  pdf.text(sub, 105 - (pdf.getTextWidth(sub) + cs * (sub.length - 1)) / 2, 27, { charSpace: cs })
+async function header(pdf: jsPDF) {
+  const w = 112, h = w * LOGO_RATIO
+  pdf.addImage(await logoData(), 'PNG', 105 - w / 2, 6, w, h)
 }
 
 export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?: Client; chantierName?: string }): Promise<jsPDF> {
@@ -45,7 +49,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   const tot = docTotals(doc)
   const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
   pdf.setProperties({ title: pdfName(doc).replace('.pdf', ''), author: company.name, creator: `${company.name} — Gestion` })
-  header(pdf, company)
+  await header(pdf)
 
   // N° et date
   pdf.setFont('helvetica', 'bold'); pdf.setFontSize(11); pdf.setTextColor(0)
@@ -148,14 +152,14 @@ export async function openDocPdf(doc: Doc) {
 }
 
 /** Simple tableau en PDF (pointage / salaires, frais). */
-export function tablePdf(opts: { title: string; subtitle?: string; head: string[]; body: (string | number)[][]; foot?: (string | number)[]; align?: ('left' | 'right' | 'center')[]; company: Company; landscape?: boolean; fileName: string }) {
+export async function tablePdf(opts: { title: string; subtitle?: string; head: string[]; body: (string | number)[][]; foot?: (string | number)[]; align?: ('left' | 'right' | 'center')[]; company: Company; landscape?: boolean; fileName: string }) {
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: opts.landscape ? 'landscape' : 'portrait' })
-  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(16); pdf.setTextColor(...RED); pdf.text(t(opts.company.name), M, 16)
-  pdf.setFontSize(13); pdf.setTextColor(...INK); pdf.text(t(opts.title), M, 24)
-  if (opts.subtitle) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(90); pdf.text(t(opts.subtitle), M, 29) }
+  pdf.addImage(await logoData(), 'PNG', M, 6, 56, 56 * LOGO_RATIO)
+  pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13); pdf.setTextColor(...INK); pdf.text(t(opts.title), M, 27)
+  if (opts.subtitle) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(90); pdf.text(t(opts.subtitle), M, 32) }
   const columnStyles = Object.fromEntries((opts.align ?? []).map((a, i) => [i, { halign: a }]))
   autoTable(pdf, {
-    startY: opts.subtitle ? 33 : 29, margin: { left: M, right: M },
+    startY: opts.subtitle ? 36 : 31, margin: { left: M, right: M },
     head: [opts.head.map(t)], body: opts.body.map((r) => r.map(t)), foot: opts.foot ? [opts.foot.map(t)] : undefined,
     didParseCell: (h) => { if (h.section === 'foot' && opts.align?.[h.column.index]) h.cell.styles.halign = opts.align[h.column.index] },
     theme: 'grid', styles: { fontSize: opts.landscape ? 7 : 8.5, cellPadding: 1.2, lineColor: [150, 150, 150], lineWidth: 0.15, textColor: 0 },

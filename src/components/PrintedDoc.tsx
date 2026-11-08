@@ -1,6 +1,7 @@
 import { docLabels, docTotals, lineTotal, type Client, type Company, type Doc } from '../lib/db'
 import { amountInWords, dateFr, money, qtyFmt } from '../lib/format'
 import { docRef, sumWordsLabel } from '../lib/docs'
+import logoUrl from '../assets/logo-sonaltech.png'
 
 /** Le document tel qu'il s'imprime (A4), au format des factures de l'entreprise. */
 export default function PrintedDoc({ doc, company, client, chantierName }: { doc: Doc; company: Company; client?: Client; chantierName?: string }) {
@@ -10,9 +11,8 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
   )
   return (
     <article className="mx-auto w-full max-w-[210mm] bg-white px-[10mm] py-[8mm] text-[12px] text-black print:max-w-none print:p-0">
-      <header className="text-center">
-        <h1 className="font-['Arial_Black','Arial',sans-serif] text-[36px] font-black leading-none tracking-wide text-brand [-webkit-text-stroke:1px_#5a0a14] [text-shadow:2px_2px_0_rgba(0,0,0,.18)]">{company.name}</h1>
-        <p className="mt-1.5 font-['Arial_Black','Arial',sans-serif] text-[15px] font-black uppercase tracking-[0.25em] text-ink">{company.subtitle}</p>
+      <header className="flex justify-center">
+        <img src={logoUrl} alt={company.name} className="h-auto w-[115mm] max-w-full" />
       </header>
 
       <div className="mt-6 flex items-end justify-between px-[8%] text-[14px] font-semibold">
