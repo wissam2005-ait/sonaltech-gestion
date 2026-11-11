@@ -141,7 +141,7 @@ export default function DocEdit() {
           <section className="card overflow-x-auto">
             <table className="tbl min-w-[820px]">
               <thead>{qtyDoc
-                ? <tr><th className="w-8">#</th><th>Description</th><th className="w-24">U</th><th className="w-32 !text-right">Qté contrat</th><th className="w-32 !text-right">Qté consommée</th><th className="w-32 !text-right">Reste</th><th className="w-24" /></tr>
+                ? <tr><th className="w-8">#</th><th>Description</th><th className="w-24">U</th><th className="w-32 !text-right">Qté contrat</th><th className="w-32 !text-right">Qté réalisée</th><th className="w-36 !text-right">Qté reste à réaliser</th><th className="w-24" /></tr>
                 : <tr><th className="w-8">#</th><th>Description</th><th className="w-24">U</th><th className="w-32 !text-right">PU HT</th><th className="w-28 !text-right">Quantité</th><th className="w-36 !text-right">Montant HT</th><th className="w-24" /></tr>}</thead>
               <tbody>
                 {doc.lines.map((l, i) => (
@@ -173,8 +173,8 @@ export default function DocEdit() {
             <datalist id="units">{units.map((u) => <option key={u} value={u} />)}</datalist>
             <div className="flex flex-wrap items-start justify-between gap-6 p-4">
               <button className="btn-ghost" onClick={() => update({ lines: [...doc.lines, qtyDoc ? { designation: '', unit: 'U', price: 0, qty: 0, contractQty: 0 } : { designation: '', unit: 'U', price: 0, qty: 1 }] })}><Icon name="plus" size={16} /> Ajouter une ligne</button>
-              {qtyDoc ? <p className="max-w-md text-sm text-ink/60">Reste = quantité du contrat − quantité consommée. En rouge si la quantité consommée dépasse le contrat. « → Facture » facture les quantités consommées.</p> : <dl className="min-w-[260px] space-y-1 text-sm">
-                <div className="flex justify-between gap-6 text-lg font-bold"><dt>Total</dt><dd className="num">{money(t.ttc)} DA</dd></div>
+              {qtyDoc ? <p className="max-w-md text-sm text-ink/60">Qté reste à réaliser = quantité du contrat − quantité réalisée. En rouge si la quantité réalisée dépasse le contrat. « → Facture » facture les quantités réalisées.</p> : <dl className="min-w-[260px] space-y-1 text-sm">
+                <div className="flex justify-between gap-6 text-lg font-bold"><dt>{doc.type === 'facture' ? 'Total TTC' : 'Total'}</dt><dd className="num">{money(t.ttc)} DA</dd></div>
               </dl>}
             </div>
           </section>

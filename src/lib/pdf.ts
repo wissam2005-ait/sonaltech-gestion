@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { db, docLabels, docTotals, getCompany, lineTotal, remaining, type Client, type Company, type Doc } from './db'
 import { amountInWords, dateFr, money, qtyFmt } from './format'
-import { docRef, sumWordsLabel } from './docs'
+import { docRef, sumWordsLabel, totalLabel } from './docs'
 import { downloadBlob, safeFileName } from './xlsx'
 import logoUrl from '../assets/logo-sonaltech.png'
 
@@ -99,7 +99,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   if (doc.type === 'attachement') {
     autoTable(pdf, {
       startY: y, margin: { left: M, right: M, top: 14, bottom: 14 },
-      head: [['Description', 'U', 'Qté contrat', 'Qté consommée', 'Reste']],
+      head: [['Description', 'U', 'Qté contrat', 'Qté réalisée', 'Qté reste à réaliser']],
       body: doc.lines.map((l) => [t(l.designation), t(l.unit), t(qtyFmt(l.contractQty ?? 0)), t(qtyFmt(l.qty || 0)), t(qtyFmt(remaining(l)))]),
       theme: 'grid',
       styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.4, lineColor: [60, 60, 60], lineWidth: 0.2, textColor: 0, valign: 'middle' },
@@ -113,7 +113,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
     y = (pdf as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 16
     if (y > 270) { pdf.addPage(); y = 25 }
     pdf.setFont('helvetica', 'bolditalic'); pdf.setFontSize(10.5); pdf.setTextColor(0)
-    for (const [label, x] of [['LE CLIENT', M + W * 0.22], ['ENTREPRISE', M + W * 0.78]] as [string, number][]) {
+    for (const [label, x] of [['ENTREPRISE', M + W * 0.78]] as [string, number][]) {
       pdf.text(label, x, y, { align: 'center' }); const w = pdf.getTextWidth(label); pdf.setLineWidth(0.3); pdf.line(x - w / 2, y + 0.8, x + w / 2, y + 0.8)
     }
     frame(pdf)
@@ -142,7 +142,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   // Un seul total (pas de TVA)
   const lw = W * 0.2, vw = W * 0.2, tx = 210 - M - lw - vw, rh = 8
   pdf.setFontSize(11)
-  pdf.setFillColor(...HEAD); pdf.rect(tx, y, lw, rh, 'FD'); pdf.text('TOTAL DZD', tx + lw / 2, y + 5.4, { align: 'center' })
+  pdf.setFillColor(...HEAD); pdf.rect(tx, y, lw, rh, 'FD'); pdf.text(totalLabel(doc.type), tx + lw / 2, y + 5.4, { align: 'center' })
   pdf.rect(tx + lw, y, vw, rh); pdf.text(t(money(tot.ttc)), 210 - M - 2, y + 5.4, { align: 'right' })
   y += rh + 10
 
