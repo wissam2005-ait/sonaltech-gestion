@@ -57,7 +57,7 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
           <tbody className="[&>tr>td]:border [&>tr>td]:border-black/70 [&>tr>td]:px-2 [&>tr>td]:py-[3px]">
             {doc.lines.map((l, i) => (
               <tr key={i} className="break-inside-avoid">
-                <td className="font-mono text-[11.5px] font-bold">{l.designation}</td>
+                <td className="font-bold">{l.designation}</td>
                 <td className="text-center">{l.unit}</td>
                 <td className="text-center tabular-nums">{qtyFmt(l.contractQty ?? 0)}</td>
                 <td className="text-center tabular-nums">{qtyFmt(l.qty || 0)}</td>
@@ -76,7 +76,7 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
         <tbody className="[&>tr>td]:border-x [&>tr>td]:border-black/70 [&>tr>td]:px-2 [&>tr>td]:py-[3px]">
           {doc.lines.map((l, i) => (
             <tr key={i} className="break-inside-avoid">
-              <td className="font-mono text-[11.5px] font-bold">{l.designation}</td>
+              <td className="font-bold">{l.designation}</td>
               <td className="text-center">{l.unit}</td>
               <td className="text-right tabular-nums">{money(l.price)}</td>
               <td className="text-center tabular-nums">{qtyFmt(l.qty)}</td>
@@ -89,11 +89,9 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
 
       <div className="mt-4 flex items-start justify-between gap-6 break-inside-avoid">
         <p className="pt-1 text-[13px] font-bold">Mode de règlement : {doc.paymentMode.toUpperCase()}</p>
-        <table className="w-[46%] border-collapse text-[12.5px] [&_td]:border [&_td]:border-black/70 [&_td]:px-2 [&_td]:py-1">
+        <table className="w-[40%] border-collapse text-[13.5px] [&_td]:border [&_td]:border-black/70 [&_td]:px-2 [&_td]:py-1.5">
           <tbody>
-            <tr><td className="border-0 !border-transparent" /><td className="bg-head text-center font-bold">DZD HT</td><td className="text-right font-bold tabular-nums">{money(t.ht)}</td></tr>
-            <tr><td className="border-0 !border-transparent" /><td className="bg-head text-center font-bold">TVA {String(doc.vatRate).padStart(2, '0')} %</td><td className="text-right font-bold tabular-nums">{money(t.vat)}</td></tr>
-            <tr><td className="text-center font-bold">TOTAL DZD</td><td className="bg-head text-center font-bold">TTC</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>
+            <tr><td className="w-1/2 bg-head text-center font-bold">TOTAL DZD</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>
           </tbody>
         </table>
       </div>

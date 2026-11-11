@@ -25,7 +25,7 @@ export async function createDoc(type: DocType, from?: Partial<Doc>): Promise<num
     type, number: await nextNumber(type, year), year, date,
     clientId: from?.clientId, chantierId: from?.chantierId, object: from?.object ?? '',
     lines: convertLines(type, from) ?? [{ designation: '', unit: 'U', price: 0, qty: type === 'attachement' ? 0 : 1, ...(type === 'attachement' ? { contractQty: 0 } : {}) }],
-    vatRate: from?.vatRate ?? company.defaultVat, paymentMode: from?.paymentMode ?? company.defaultPayment,
+    vatRate: 0, paymentMode: from?.paymentMode ?? company.defaultPayment,
     status: 'brouillon', payments: [], sourceId: from?.id, createdAt: new Date().toISOString(),
   }
   return db.docs.add(doc)
@@ -71,11 +71,7 @@ export async function exportDocExcel(d: Doc) {
   }
   const last = R.length - 1
   push()
-  const ht = R.length
-  push({ v: `Mode de règlement : ${d.paymentMode.toUpperCase()}`, s: ST.bold }, null, null, { v: 'DZD HT', s: ST.head }, { v: t.ht, f: `SUM(${ref(4, first)}:${ref(4, last)})`, s: ST.numBold })
-  const vat = R.length
-  push(null, null, null, { v: `TVA ${d.vatRate} %`, s: ST.head }, { v: t.vat, f: `ROUND(${ref(4, ht)}*${d.vatRate}/100,2)`, s: ST.numBold })
-  push(null, null, { v: 'TOTAL DZD', s: ST.bold }, { v: 'TTC', s: ST.head }, { v: t.ttc, f: `${ref(4, ht)}+${ref(4, vat)}`, s: ST.numBold })
+  push({ v: `Mode de règlement : ${d.paymentMode.toUpperCase()}`, s: ST.bold }, null, null, { v: 'TOTAL DZD', s: ST.head }, { v: t.ttc, f: `SUM(${ref(4, first)}:${ref(4, last)})`, s: ST.numBold })
   push()
   push({ v: `${sumWordsLabel[d.type]} : ${amountInWords(t.ttc)}.` })
   push(); push(null, null, null, { v: 'ENTREPRISE', s: ST.bold })

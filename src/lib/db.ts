@@ -225,7 +225,7 @@ export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 10
 export const lineTotal = (l: Line) => round2((l.price || 0) * (l.qty || 0))
 export function docTotals(d: Pick<Doc, 'lines' | 'vatRate'>) {
   const ht = round2(d.lines.reduce((s, l) => s + lineTotal(l), 0))
-  const vat = round2(ht * (d.vatRate || 0) / 100)
+  const vat = 0 // pas de TVA (entreprise non assujettie)
   return { ht, vat, ttc: round2(ht + vat) }
 }
 /** Reste à réaliser sur une ligne d'attachement (contrat − consommé). */

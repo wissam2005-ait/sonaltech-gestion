@@ -55,7 +55,7 @@ export default function ChantierDetail() {
         <h2 className="mb-3 text-2xl font-bold">Documents</h2>
         {docs?.length ? (
           <div className="card overflow-x-auto"><table className="tbl min-w-[560px]">
-            <thead><tr><th>Type</th><th>N°</th><th>Date</th><th className="!text-right">Total TTC</th></tr></thead>
+            <thead><tr><th>Type</th><th>N°</th><th>Date</th><th className="!text-right">Total</th></tr></thead>
             <tbody>{[...docs].sort((a, b) => b.date.localeCompare(a.date)).map((d) => (
               <tr key={d.id}><td>{docLabels[d.type].one}</td><td className="font-semibold"><Link to={`/documents/${d.type}/${d.id}`}>{docRef(d)}</Link></td><td>{dateFr(d.date)}</td><td className="num">{docAmount(d)}</td></tr>
             ))}</tbody></table></div>

@@ -48,7 +48,7 @@ export default function Archives() {
       </div>
       {docs && shown.length === 0 ? <Empty icon="doc" title="Aucun document sur cette période" /> : (
         <div className="card overflow-x-auto"><table className="tbl min-w-[680px]">
-          <thead><tr><th>Document</th><th>Date</th><th>Client</th><th className="!text-right">Total TTC</th><th /></tr></thead>
+          <thead><tr><th>Document</th><th>Date</th><th>Client</th><th className="!text-right">Total</th><th /></tr></thead>
           <tbody>{shown.map((d) => (
             <tr key={d.id}>
               <td className="font-semibold"><Link to={`/documents/${d.type}/${d.id}`}>{docLabels[d.type].one} {docRef(d)}</Link></td>

@@ -31,7 +31,6 @@ export default function Parametres() {
         <Field label="Téléphone"><input className="input" value={c.phone} onChange={set('phone')} /></Field>
         <Field label="E-mail"><input className="input" value={c.email} onChange={set('email')} /></Field>
         <Field label="Coordonnées de paiement (RIB / CCP, en bas des documents)" className="sm:col-span-2"><input className="input" value={c.bank} onChange={set('bank')} /></Field>
-        <Field label="TVA par défaut (%)" hint="0 si l'entreprise n'est pas assujettie."><input className="input" type="number" min={0} step="0.01" value={c.defaultVat} onChange={set('defaultVat')} /></Field>
         <Field label="Mode de règlement par défaut"><input className="input" value={c.defaultPayment} onChange={set('defaultPayment')} /></Field>
         <div className="flex items-center gap-3 sm:col-span-2"><button className="btn-primary">Enregistrer</button>{saved && <span className="flex items-center gap-1 text-sm text-[#1d7f46]"><Icon name="check" size={16} /> Enregistré</span>}</div>
       </form>

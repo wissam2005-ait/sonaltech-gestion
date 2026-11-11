@@ -50,7 +50,7 @@ export default function DocsList() {
       ) : (
         <div className="card overflow-x-auto">
           <table className="tbl min-w-[720px]">
-            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Objet / chantier</th><th className="!text-right">{type === 'attachement' ? '' : 'Total TTC'}</th><th>État</th><th /></tr></thead>
+            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Objet / chantier</th><th className="!text-right">{type === 'attachement' ? '' : 'Total'}</th><th>État</th><th /></tr></thead>
             <tbody>
               {shown.map((d) => {
                 const [s, tone] = statusLabel[d.status]
