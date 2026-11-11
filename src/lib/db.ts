@@ -223,9 +223,10 @@ export async function nextNumber(type: DocType, year: number): Promise<number> {
 
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100
 export const lineTotal = (l: Line) => round2((l.price || 0) * (l.qty || 0))
-export function docTotals(d: Pick<Doc, 'lines' | 'vatRate'>) {
+export function docTotals(d: Pick<Doc, 'lines' | 'vatRate'> & { type?: DocType }) {
   const ht = round2(d.lines.reduce((s, l) => s + lineTotal(l), 0))
-  const vat = 0 // pas de TVA (entreprise non assujettie)
+  // TVA seulement sur les factures (0 % par défaut) ; devis, bons pour, attachements : pas de TVA
+  const vat = d.type === 'facture' ? round2(ht * (d.vatRate || 0) / 100) : 0
   return { ht, vat, ttc: round2(ht + vat) }
 }
 /** Reste à réaliser sur une ligne d'attachement (contrat − consommé). */

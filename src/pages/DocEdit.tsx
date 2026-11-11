@@ -129,7 +129,8 @@ export default function DocEdit() {
               <input className="input" list="paymodes" value={doc.paymentMode} onChange={(e) => update({ paymentMode: e.target.value })} />
               <datalist id="paymodes">{payModes.map((m) => <option key={m} value={m} />)}</datalist>
             </Field>}
-            <div>
+            <div className={doc.type === 'facture' ? 'grid grid-cols-2 gap-3' : ''}>
+              {doc.type === 'facture' && <Field label="TVA %"><input className="input" type="number" min={0} step="0.01" value={doc.vatRate || 0} onChange={(e) => update({ vatRate: parseNum(e.target.value) })} /></Field>}
               <Field label="État">
                 <select className="input" value={doc.status} onChange={(e) => update({ status: e.target.value as Doc['status'] })}>
                   {Object.entries(statusLabel).filter(([k]) => billable ? k !== 'accepte' && k !== 'refuse' : k !== 'paye').map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
@@ -174,7 +175,11 @@ export default function DocEdit() {
             <div className="flex flex-wrap items-start justify-between gap-6 p-4">
               <button className="btn-ghost" onClick={() => update({ lines: [...doc.lines, qtyDoc ? { designation: '', unit: 'U', price: 0, qty: 0, contractQty: 0 } : { designation: '', unit: 'U', price: 0, qty: 1 }] })}><Icon name="plus" size={16} /> Ajouter une ligne</button>
               {qtyDoc ? <p className="max-w-md text-sm text-ink/60">Qté reste à réaliser = quantité du contrat − quantité réalisée. En rouge si la quantité réalisée dépasse le contrat. « → Facture » facture les quantités réalisées.</p> : <dl className="min-w-[260px] space-y-1 text-sm">
-                <div className="flex justify-between gap-6 text-lg font-bold"><dt>{doc.type === 'facture' ? 'Total TTC' : 'Total'}</dt><dd className="num">{money(t.ttc)} DA</dd></div>
+                {doc.type === 'facture' && <>
+                  <div className="flex justify-between gap-6"><dt>Total HT</dt><dd className="num font-semibold">{money(t.ht)} DA</dd></div>
+                  <div className="flex justify-between gap-6"><dt>TVA {doc.vatRate || 0} %</dt><dd className="num">{money(t.vat)} DA</dd></div>
+                </>}
+                <div className={`flex justify-between gap-6 text-lg font-bold ${doc.type === 'facture' ? 'border-t border-line pt-1' : ''}`}><dt>{doc.type === 'facture' ? 'Total TTC' : 'Total'}</dt><dd className="num">{money(t.ttc)} DA</dd></div>
               </dl>}
             </div>
           </section>
