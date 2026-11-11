@@ -105,7 +105,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
       styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.4, lineColor: [60, 60, 60], lineWidth: 0.2, textColor: 0, valign: 'middle' },
       headStyles: { fillColor: HEAD, textColor: 0, fontStyle: 'bold', halign: 'center' },
       columnStyles: {
-        0: { cellWidth: W * 0.5, font: 'courier', fontStyle: 'bold', fontSize: 8.6 },
+        0: { cellWidth: W * 0.5, fontStyle: 'bold' },
         1: { cellWidth: W * 0.08, halign: 'center' }, 2: { cellWidth: W * 0.14, halign: 'center' },
         3: { cellWidth: W * 0.15, halign: 'center' }, 4: { cellWidth: W * 0.13, halign: 'center', fontStyle: 'bold' },
       },
@@ -129,7 +129,7 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
     styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.4, lineColor: [60, 60, 60], lineWidth: 0.2, textColor: 0, valign: 'middle' },
     headStyles: { fillColor: HEAD, textColor: 0, fontStyle: 'bold', halign: 'center' },
     columnStyles: {
-      0: { cellWidth: W * 0.52, font: 'courier', fontStyle: 'bold', fontSize: 8.6 },
+      0: { cellWidth: W * 0.52, fontStyle: 'bold' },
       1: { cellWidth: W * 0.05, halign: 'center' }, 2: { cellWidth: W * 0.13, halign: 'right' },
       3: { cellWidth: W * 0.12, halign: 'center' }, 4: { cellWidth: W * 0.18, halign: 'right' },
     },
@@ -139,15 +139,12 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
 
   // Règlement et totaux
   pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.text(t(`Mode de règlement : ${doc.paymentMode.toUpperCase()}`), M, y + 4)
-  const tx = M + W * 0.54, c1 = W * 0.17, c2 = W * 0.16, c3 = W * 0.13, rh = 6.5
-  const rows: [string, string, string][] = [['', 'DZD HT', money(tot.ht)], ['', `TVA ${String(doc.vatRate).padStart(2, '0')} %`, money(tot.vat)], ['TOTAL DZD', 'TTC', money(tot.ttc)]]
-  rows.forEach(([a, b, c], i) => {
-    const ry = y + i * rh
-    if (a) { pdf.rect(tx, ry, c1, rh); pdf.text(a, tx + c1 / 2, ry + 4.4, { align: 'center' }) }
-    pdf.setFillColor(...HEAD); pdf.rect(tx + c1, ry, c2, rh, 'FD'); pdf.text(b, tx + c1 + c2 / 2, ry + 4.4, { align: 'center' })
-    pdf.rect(tx + c1 + c2, ry, c3 + (W - (W * 0.54) - c1 - c2 - c3), rh); pdf.text(t(c), 210 - M - 2, ry + 4.4, { align: 'right' })
-  })
-  y += 3 * rh + 9
+  // Un seul total (pas de TVA)
+  const lw = W * 0.2, vw = W * 0.2, tx = 210 - M - lw - vw, rh = 8
+  pdf.setFontSize(11)
+  pdf.setFillColor(...HEAD); pdf.rect(tx, y, lw, rh, 'FD'); pdf.text('TOTAL DZD', tx + lw / 2, y + 5.4, { align: 'center' })
+  pdf.rect(tx + lw, y, vw, rh); pdf.text(t(money(tot.ttc)), 210 - M - 2, y + 5.4, { align: 'right' })
+  y += rh + 10
 
   // Somme en lettres
   pdf.setFontSize(10); pdf.setFont('helvetica', 'normal')

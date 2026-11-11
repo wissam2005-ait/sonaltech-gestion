@@ -129,8 +129,7 @@ export default function DocEdit() {
               <input className="input" list="paymodes" value={doc.paymentMode} onChange={(e) => update({ paymentMode: e.target.value })} />
               <datalist id="paymodes">{payModes.map((m) => <option key={m} value={m} />)}</datalist>
             </Field>}
-            <div className="grid grid-cols-2 gap-3">
-              {!qtyDoc && <Field label="TVA %"><input className="input" type="number" min={0} step="0.01" value={doc.vatRate} onChange={(e) => update({ vatRate: parseNum(e.target.value) })} /></Field>}
+            <div>
               <Field label="État">
                 <select className="input" value={doc.status} onChange={(e) => update({ status: e.target.value as Doc['status'] })}>
                   {Object.entries(statusLabel).filter(([k]) => billable ? k !== 'accepte' && k !== 'refuse' : k !== 'paye').map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
@@ -148,7 +147,7 @@ export default function DocEdit() {
                 {doc.lines.map((l, i) => (
                   <tr key={i}>
                     <td className="text-ink/40">{i + 1}</td>
-                    <td><input className="input font-mono text-sm font-semibold" list="catalogue" value={l.designation} onChange={(e) => pickDesignation(i, e.target.value)} placeholder="Tapez ou choisissez dans le catalogue…" /></td>
+                    <td><input className="input font-bold" list="catalogue" value={l.designation} onChange={(e) => pickDesignation(i, e.target.value)} placeholder="Tapez ou choisissez dans le catalogue…" /></td>
                     <td><input className="input" list="units" value={l.unit} onChange={(e) => setLine(i, { unit: e.target.value.toUpperCase() })} /></td>
                     {qtyDoc ? <>
                       <td><input className="input text-right" inputMode="decimal" value={l.contractQty || ''} onChange={(e) => setLine(i, { contractQty: parseNum(e.target.value) })} /></td>
@@ -175,9 +174,7 @@ export default function DocEdit() {
             <div className="flex flex-wrap items-start justify-between gap-6 p-4">
               <button className="btn-ghost" onClick={() => update({ lines: [...doc.lines, qtyDoc ? { designation: '', unit: 'U', price: 0, qty: 0, contractQty: 0 } : { designation: '', unit: 'U', price: 0, qty: 1 }] })}><Icon name="plus" size={16} /> Ajouter une ligne</button>
               {qtyDoc ? <p className="max-w-md text-sm text-ink/60">Reste = quantité du contrat − quantité consommée. En rouge si la quantité consommée dépasse le contrat. « → Facture » facture les quantités consommées.</p> : <dl className="min-w-[260px] space-y-1 text-sm">
-                <div className="flex justify-between gap-6"><dt>Total HT</dt><dd className="num font-semibold">{money(t.ht)} DA</dd></div>
-                <div className="flex justify-between gap-6"><dt>TVA {doc.vatRate} %</dt><dd className="num">{money(t.vat)} DA</dd></div>
-                <div className="flex justify-between gap-6 border-t border-line pt-1 text-lg font-bold"><dt>Total TTC</dt><dd className="num">{money(t.ttc)} DA</dd></div>
+                <div className="flex justify-between gap-6 text-lg font-bold"><dt>Total</dt><dd className="num">{money(t.ttc)} DA</dd></div>
               </dl>}
             </div>
           </section>

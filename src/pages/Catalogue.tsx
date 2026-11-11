@@ -18,7 +18,7 @@ export default function Catalogue() {
       <div className="card overflow-x-auto"><table className="tbl min-w-[520px]">
         <thead><tr><th>Désignation</th><th>U</th><th className="!text-right">PU HT</th><th /></tr></thead>
         <tbody>{shown.map((a) => (
-          <tr key={a.id}><td className="font-mono text-sm font-semibold">{a.designation}</td><td>{a.unit}</td><td className="num">{money(a.price)}</td>
+          <tr key={a.id}><td className="font-semibold">{a.designation}</td><td>{a.unit}</td><td className="num">{money(a.price)}</td>
             <td className="text-right"><button className="p-1 text-ink/50 hover:text-ink" onClick={() => setEdit(a)}><Icon name="edit" size={16} /></button>
               <button className="p-1 text-ink/50 hover:text-red-700" onClick={async () => { if (confirmDelete(`« ${a.designation} »`)) await remove('articles', [a.id!]) }}><Icon name="trash" size={16} /></button></td></tr>
         ))}</tbody></table></div>
