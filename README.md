@@ -40,7 +40,7 @@ PC, puis **Sauvegarde → Restaurer**. Ne jamais effacer les « données de navi
 
 ```bash
 npm install
-APP_PASSWORD=test-local-2026 node --experimental-strip-types server/dev-server.mjs   # API locale (port 8787)
+APP_PASSWORD=test-local-2026 node --experimental-strip-types server/dev-server.mjs   # API locale (port 8787) ; avec DATABASE_URL=… → PostgreSQL
 npm run dev      # http://localhost:5173
 npm run build    # version de production dans dist/
 ```

@@ -3,16 +3,20 @@
 import { createServer } from 'node:http'
 import { readFileSync, writeFileSync, existsSync } from 'node:fs'
 import { handle } from './core.ts'
+import { pgStore } from './pg-store.ts'
 
 const FILE = process.env.STORE_FILE ?? '.dev-store.json'
 const db = existsSync(FILE) ? JSON.parse(readFileSync(FILE, 'utf8')) : {}
 let v = 0
 const save = () => writeFileSync(FILE, JSON.stringify(db))
-const store = {
+const fileStore = {
   async get(k) { return db[k] ? { data: structuredClone(db[k].data), etag: db[k].etag } : null },
   async setIfUnchanged(k, data, etag) { if ((db[k]?.etag) !== etag) return false; db[k] = { data, etag: String(++v) }; save(); return true },
   async put(k, data) { db[k] = { data, etag: String(++v) }; save() },
 }
+// DATABASE_URL défini → base PostgreSQL (comme sur Vercel/Neon) ; sinon fichier JSON (comme Netlify Blobs)
+const store = process.env.DATABASE_URL ? pgStore : fileStore
+
 createServer(async (req, res) => {
   const chunks = []; for await (const c of req) chunks.push(c)
   const r = await handle(new Request(`http://x${req.url}`, { method: req.method, headers: req.headers, body: ['GET', 'HEAD', 'OPTIONS'].includes(req.method) ? undefined : Buffer.concat(chunks) }), store, process.env.APP_PASSWORD)
