@@ -91,7 +91,11 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
         <p className="pt-1 text-[13px] font-bold">Mode de règlement : {doc.paymentMode.toUpperCase()}</p>
         <table className="w-[40%] border-collapse text-[13.5px] [&_td]:border [&_td]:border-black/70 [&_td]:px-2 [&_td]:py-1.5">
           <tbody>
-            <tr><td className="w-1/2 bg-head text-center font-bold">{totalLabel(doc.type)}</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>
+            {doc.type === 'facture' ? <>
+              <tr><td className="w-1/2 bg-head text-center font-bold">TOTAL HT</td><td className="text-right font-bold tabular-nums">{money(t.ht)}</td></tr>
+              <tr><td className="bg-head text-center font-bold">TVA {String(doc.vatRate || 0).padStart(2, '0')} %</td><td className="text-right font-bold tabular-nums">{money(t.vat)}</td></tr>
+              <tr><td className="bg-head text-center font-bold">TOTAL TTC</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>
+            </> : <tr><td className="w-1/2 bg-head text-center font-bold">{totalLabel(doc.type)}</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>}
           </tbody>
         </table>
       </div>

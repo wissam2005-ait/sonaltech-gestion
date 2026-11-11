@@ -140,11 +140,17 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   // Règlement et totaux
   pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10); pdf.text(t(`Mode de règlement : ${doc.paymentMode.toUpperCase()}`), M, y + 4)
   // Un seul total (pas de TVA)
-  const lw = W * 0.2, vw = W * 0.2, tx = 210 - M - lw - vw, rh = 8
-  pdf.setFontSize(11)
-  pdf.setFillColor(...HEAD); pdf.rect(tx, y, lw, rh, 'FD'); pdf.text(totalLabel(doc.type), tx + lw / 2, y + 5.4, { align: 'center' })
-  pdf.rect(tx + lw, y, vw, rh); pdf.text(t(money(tot.ttc)), 210 - M - 2, y + 5.4, { align: 'right' })
-  y += rh + 10
+  const lw = W * 0.2, vw = W * 0.2, tx = 210 - M - lw - vw, rh = doc.type === 'facture' ? 7 : 8
+  const totalRows: [string, string][] = doc.type === 'facture'
+    ? [['TOTAL HT', money(tot.ht)], [`TVA ${String(doc.vatRate || 0).padStart(2, '0')} %`, money(tot.vat)], ['TOTAL TTC', money(tot.ttc)]]
+    : [[totalLabel(doc.type), money(tot.ttc)]]
+  pdf.setFontSize(doc.type === 'facture' ? 10.5 : 11)
+  totalRows.forEach(([label, value], i) => {
+    const ry = y + i * rh
+    pdf.setFillColor(...HEAD); pdf.rect(tx, ry, lw, rh, 'FD'); pdf.text(label, tx + lw / 2, ry + rh / 2 + 1.5, { align: 'center' })
+    pdf.rect(tx + lw, ry, vw, rh); pdf.text(t(value), 210 - M - 2, ry + rh / 2 + 1.5, { align: 'right' })
+  })
+  y += totalRows.length * rh + 10
 
   // Somme en lettres
   pdf.setFontSize(10); pdf.setFont('helvetica', 'normal')
