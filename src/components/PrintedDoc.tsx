@@ -1,4 +1,4 @@
-import { docLabels, docTotals, lineTotal, type Client, type Company, type Doc } from '../lib/db'
+import { docLabels, docTotals, lineTotal, remaining, type Client, type Company, type Doc } from '../lib/db'
 import { amountInWords, dateFr, money, qtyFmt } from '../lib/format'
 import { docRef, sumWordsLabel } from '../lib/docs'
 import logoUrl from '../assets/logo-sonaltech.png'
@@ -7,10 +7,11 @@ import logoUrl from '../assets/logo-sonaltech.png'
 export default function PrintedDoc({ doc, company, client, chantierName }: { doc: Doc; company: Company; client?: Client; chantierName?: string }) {
   const t = docTotals(doc)
   const Row = ({ k, v }: { k: string; v?: string }) => (
-    <p className="leading-snug"><span className="text-ink/80">{k} :</span> <span className="font-semibold">{v}</span></p>
+    <p className="leading-snug"><span className="font-bold text-black">{k} :</span> <span className="text-black/70">{v}</span></p>
   )
   return (
-    <article className="mx-auto w-full max-w-[210mm] bg-white px-[10mm] py-[8mm] text-[12px] text-black print:max-w-none print:p-0">
+    <article className="mx-auto w-full max-w-[210mm] bg-white p-[3mm] text-[12px] text-black print:max-w-none print:p-0">
+      <div className="min-h-[275mm] border-[1.5px] border-black/85 px-[7mm] py-[6mm] print:min-h-[275mm]">
       <header className="flex justify-center">
         <img src={logoUrl} alt={company.name} className="h-auto w-[150mm] max-w-full" />
       </header>
@@ -29,16 +30,16 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
           {company.art && <Row k="ART" v={company.art} />}
           {company.nif && <Row k="NIF" v={company.nif} />}
           {company.nis && <Row k="NIS" v={company.nis} />}
-          <p className="pt-2"><span className="text-ink/80">Téléphone :</span> <span className="font-semibold">{company.phone}</span></p>
+          <p className="pt-2"><span className="font-bold text-black">Téléphone :</span> <span className="text-black/70">{company.phone}</span></p>
         </div>
         <div className="space-y-0.5 p-2.5">
-          <p><span className="text-ink/80">A :</span> <span className="ml-6 font-bold uppercase">{client?.name}</span></p>
+          <p><span className="font-bold text-black">A :</span> <span className="ml-6 uppercase text-black/70">{client?.name}</span></p>
           <Row k="Adresse" v={client?.address} />
           <Row k="Activité" v={client?.activity} />
           <Row k="RC" v={client?.rc} />
           <Row k="ART" v={client?.art} />
           <Row k="NIF" v={client?.nif} />
-          <p className="pt-2"><span className="text-ink/80">Téléphone :</span> <span className="font-semibold">{client?.phone}</span></p>
+          <p className="pt-2"><span className="font-bold text-black">Téléphone :</span> <span className="text-black/70">{client?.phone}</span></p>
         </div>
       </section>
 
@@ -46,6 +47,26 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
         <p className="mt-3 text-[13px]"><span className="font-bold">Objet :</span> {[doc.object, chantierName && !doc.object.includes(chantierName) ? `Chantier : ${chantierName}` : ''].filter(Boolean).join(' — ')}</p>
       )}
 
+      {doc.type === 'attachement' ? (
+        <table className="mt-4 w-full border-collapse border border-black/70 text-[12px]">
+          <thead className="bg-head">
+            <tr className="[&>th]:border [&>th]:border-black/70 [&>th]:px-2 [&>th]:py-1.5 [&>th]:font-bold">
+              <th className="w-[50%]">Description</th><th className="w-[8%]">U</th><th className="w-[14%]">Qté contrat</th><th className="w-[15%]">Qté consommée</th><th className="w-[13%]">Reste</th>
+            </tr>
+          </thead>
+          <tbody className="[&>tr>td]:border [&>tr>td]:border-black/70 [&>tr>td]:px-2 [&>tr>td]:py-[3px]">
+            {doc.lines.map((l, i) => (
+              <tr key={i} className="break-inside-avoid">
+                <td className="font-mono text-[11.5px] font-bold">{l.designation}</td>
+                <td className="text-center">{l.unit}</td>
+                <td className="text-center tabular-nums">{qtyFmt(l.contractQty ?? 0)}</td>
+                <td className="text-center tabular-nums">{qtyFmt(l.qty || 0)}</td>
+                <td className="text-center font-bold tabular-nums">{qtyFmt(remaining(l))}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (<>
       <table className="mt-4 w-full border-collapse border border-black/70 text-[12px]">
         <thead className="bg-head">
           <tr className="[&>th]:border [&>th]:border-black/70 [&>th]:px-2 [&>th]:py-1.5 [&>th]:font-bold">
@@ -79,12 +100,14 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
 
       <p className="mt-6 break-inside-avoid text-[13px]">{sumWordsLabel[doc.type]} : <span className="font-bold">{amountInWords(t.ttc)}</span>.</p>
 
-      <div className={`mt-8 flex break-inside-avoid ${doc.type === 'devis' || doc.type === 'attachement' ? 'justify-between' : 'justify-end'} px-[10%] pb-16 text-[13px] font-bold italic underline`}>
+      </>)}
+
+      <div className={`${doc.type === 'attachement' ? 'mt-12' : 'mt-8'} flex break-inside-avoid ${doc.type === 'devis' || doc.type === 'attachement' ? 'justify-between' : 'justify-end'} px-[10%] pb-16 text-[13px] font-bold italic underline`}>
         {(doc.type === 'devis' || doc.type === 'attachement') && <span>LE CLIENT{doc.type === 'devis' ? ' (bon pour accord)' : ''}</span>}
         <span>ENTREPRISE</span>
       </div>
 
-      {company.bank && <p className="border-t border-black/30 pt-2 text-center text-[11px] text-black/70">Coordonnées de paiement : {company.bank}</p>}
+      </div>
     </article>
   )
 }

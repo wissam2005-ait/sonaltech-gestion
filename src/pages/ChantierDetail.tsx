@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, docLabels, docTotals, presenceLabels, remove, type DocType } from '../lib/db'
-import { createDoc, docRef } from '../lib/docs'
+import { createDoc, docAmount, docRef } from '../lib/docs'
 import { dateFr, money } from '../lib/format'
 import { Badge, Modal, PageHeader, Stat, confirmDelete } from '../components/ui'
 import { Icon } from '../components/icons'
@@ -57,7 +57,7 @@ export default function ChantierDetail() {
           <div className="card overflow-x-auto"><table className="tbl min-w-[560px]">
             <thead><tr><th>Type</th><th>N°</th><th>Date</th><th className="!text-right">Total TTC</th></tr></thead>
             <tbody>{[...docs].sort((a, b) => b.date.localeCompare(a.date)).map((d) => (
-              <tr key={d.id}><td>{docLabels[d.type].one}</td><td className="font-semibold"><Link to={`/documents/${d.type}/${d.id}`}>{docRef(d)}</Link></td><td>{dateFr(d.date)}</td><td className="num">{money(docTotals(d).ttc)}</td></tr>
+              <tr key={d.id}><td>{docLabels[d.type].one}</td><td className="font-semibold"><Link to={`/documents/${d.type}/${d.id}`}>{docRef(d)}</Link></td><td>{dateFr(d.date)}</td><td className="num">{docAmount(d)}</td></tr>
             ))}</tbody></table></div>
         ) : <p className="text-ink/60">Aucun document pour ce chantier.</p>}
       </section>

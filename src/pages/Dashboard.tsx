@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, docLabels, docTotals, paidAmount, presenceLabels, type DocType } from '../lib/db'
-import { createDoc, docRef } from '../lib/docs'
+import { createDoc, docAmount, docRef } from '../lib/docs'
 import { currentMonth, dateFr, money, monthLabel, todayIso } from '../lib/format'
 import { Stat } from '../components/ui'
 import { Icon } from '../components/icons'
@@ -63,7 +63,7 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold">Derniers documents</h2>
           {recent.length === 0 ? <p className="mt-3 text-ink/60">Aucun document pour l'instant : créez votre première facture avec le bouton jaune.</p> : (
             <table className="tbl mt-3"><tbody>{recent.map((d) => (
-              <tr key={d.id}><td><Link className="font-semibold" to={`/documents/${d.type}/${d.id}`}>{docLabels[d.type].one} {docRef(d)}</Link><span className="block text-xs text-ink/55">{clientName(d.clientId)}</span></td><td className="num">{money(docTotals(d).ttc)} DA</td></tr>
+              <tr key={d.id}><td><Link className="font-semibold" to={`/documents/${d.type}/${d.id}`}>{docLabels[d.type].one} {docRef(d)}</Link><span className="block text-xs text-ink/55">{clientName(d.clientId)}</span></td><td className="num">{docAmount(d)}{d.type === 'attachement' ? '' : ' DA'}</td></tr>
             ))}</tbody></table>
           )}
           <p className="mt-4 text-sm text-ink/60">{pendingQuotes.length} devis en attente de réponse · {presentToday} employé{presentToday > 1 ? 's' : ''} pointé{presentToday > 1 ? 's' : ''} présent{presentToday > 1 ? 's' : ''} aujourd'hui</p>

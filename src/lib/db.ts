@@ -23,7 +23,8 @@ export interface Chantier {
 export interface Article { id?: number; designation: string; unit: string; price: number }
 
 export type DocType = 'devis' | 'facture' | 'bon' | 'attachement'
-export interface Line { designation: string; unit: string; price: number; qty: number }
+/** Pour un attachement : `contractQty` = quantité prévue au contrat, `qty` = quantité consommée (réalisée). */
+export interface Line { designation: string; unit: string; price: number; qty: number; contractQty?: number }
 export interface Payment { date: string; amount: number; mode: string }
 export interface Doc {
   id?: number
@@ -227,6 +228,9 @@ export function docTotals(d: Pick<Doc, 'lines' | 'vatRate'>) {
   const vat = round2(ht * (d.vatRate || 0) / 100)
   return { ht, vat, ttc: round2(ht + vat) }
 }
+/** Reste à réaliser sur une ligne d'attachement (contrat − consommé). */
+export const remaining = (l: Line) => round2((l.contractQty ?? 0) - (l.qty || 0))
+export const isQtyDoc = (t: DocType) => t === 'attachement'
 export const paidAmount = (d: Doc) => round2((d.payments ?? []).reduce((s, p) => s + p.amount, 0))
 
 export const docLabels: Record<DocType, { one: string; many: string; title: string }> = {

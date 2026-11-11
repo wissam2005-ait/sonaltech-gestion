@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, docLabels, docTotals, getCompany, lineTotal, paidAmount, remove as removeRecord, round2, type Doc, type DocType, type Line } from '../lib/db'
+import { db, docLabels, docTotals, getCompany, isQtyDoc, lineTotal, paidAmount, remaining, remove as removeRecord, round2, type Doc, type DocType, type Line } from '../lib/db'
 import { createDoc, docRef, exportDocExcel } from '../lib/docs'
 import { downloadDocPdf, openDocPdf } from '../lib/pdf'
-import { money, parseNum, todayIso } from '../lib/format'
+import { money, parseNum, qtyFmt, todayIso } from '../lib/format'
 import PrintedDoc from '../components/PrintedDoc'
 import { Field, Modal, PageHeader, confirmDelete } from '../components/ui'
 import { Icon } from '../components/icons'
@@ -62,6 +62,7 @@ export default function DocEdit() {
   const chantier = chantiers?.find((c) => c.id === doc.chantierId)
   const paid = paidAmount(doc)
   const billable = doc.type === 'facture' || doc.type === 'bon'
+  const qtyDoc = isQtyDoc(doc.type)
 
   async function convert(to: DocType) {
     await db.docs.put(doc!)
@@ -124,12 +125,12 @@ export default function DocEdit() {
               </select>
             </Field>
             <Field label="Objet (facultatif)" className="sm:col-span-2"><input className="input" value={doc.object} onChange={(e) => update({ object: e.target.value })} placeholder="ex. Travaux d'électricité — villa R+1" /></Field>
-            <Field label="Mode de règlement">
+            {!qtyDoc && <Field label="Mode de règlement">
               <input className="input" list="paymodes" value={doc.paymentMode} onChange={(e) => update({ paymentMode: e.target.value })} />
               <datalist id="paymodes">{payModes.map((m) => <option key={m} value={m} />)}</datalist>
-            </Field>
+            </Field>}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="TVA %"><input className="input" type="number" min={0} step="0.01" value={doc.vatRate} onChange={(e) => update({ vatRate: parseNum(e.target.value) })} /></Field>
+              {!qtyDoc && <Field label="TVA %"><input className="input" type="number" min={0} step="0.01" value={doc.vatRate} onChange={(e) => update({ vatRate: parseNum(e.target.value) })} /></Field>}
               <Field label="État">
                 <select className="input" value={doc.status} onChange={(e) => update({ status: e.target.value as Doc['status'] })}>
                   {Object.entries(statusLabel).filter(([k]) => billable ? k !== 'accepte' && k !== 'refuse' : k !== 'paye').map(([k, [l]]) => <option key={k} value={k}>{l}</option>)}
@@ -140,16 +141,24 @@ export default function DocEdit() {
 
           <section className="card overflow-x-auto">
             <table className="tbl min-w-[820px]">
-              <thead><tr><th className="w-8">#</th><th>Description</th><th className="w-24">U</th><th className="w-32 !text-right">PU HT</th><th className="w-28 !text-right">Quantité</th><th className="w-36 !text-right">Montant HT</th><th className="w-24" /></tr></thead>
+              <thead>{qtyDoc
+                ? <tr><th className="w-8">#</th><th>Description</th><th className="w-24">U</th><th className="w-32 !text-right">Qté contrat</th><th className="w-32 !text-right">Qté consommée</th><th className="w-32 !text-right">Reste</th><th className="w-24" /></tr>
+                : <tr><th className="w-8">#</th><th>Description</th><th className="w-24">U</th><th className="w-32 !text-right">PU HT</th><th className="w-28 !text-right">Quantité</th><th className="w-36 !text-right">Montant HT</th><th className="w-24" /></tr>}</thead>
               <tbody>
                 {doc.lines.map((l, i) => (
                   <tr key={i}>
                     <td className="text-ink/40">{i + 1}</td>
                     <td><input className="input font-mono text-sm font-semibold" list="catalogue" value={l.designation} onChange={(e) => pickDesignation(i, e.target.value)} placeholder="Tapez ou choisissez dans le catalogue…" /></td>
                     <td><input className="input" list="units" value={l.unit} onChange={(e) => setLine(i, { unit: e.target.value.toUpperCase() })} /></td>
-                    <td><input className="input text-right" inputMode="decimal" value={l.price || ''} onChange={(e) => setLine(i, { price: parseNum(e.target.value) })} /></td>
-                    <td><input className="input text-right" inputMode="decimal" value={l.qty || ''} onChange={(e) => setLine(i, { qty: parseNum(e.target.value) })} /></td>
-                    <td className="num font-semibold">{money(lineTotal(l))}</td>
+                    {qtyDoc ? <>
+                      <td><input className="input text-right" inputMode="decimal" value={l.contractQty || ''} onChange={(e) => setLine(i, { contractQty: parseNum(e.target.value) })} /></td>
+                      <td><input className="input text-right" inputMode="decimal" value={l.qty || ''} onChange={(e) => setLine(i, { qty: parseNum(e.target.value) })} /></td>
+                      <td className={`num font-semibold ${remaining(l) < 0 ? 'text-[#c2332b]' : ''}`}>{qtyFmt(remaining(l))}</td>
+                    </> : <>
+                      <td><input className="input text-right" inputMode="decimal" value={l.price || ''} onChange={(e) => setLine(i, { price: parseNum(e.target.value) })} /></td>
+                      <td><input className="input text-right" inputMode="decimal" value={l.qty || ''} onChange={(e) => setLine(i, { qty: parseNum(e.target.value) })} /></td>
+                      <td className="num font-semibold">{money(lineTotal(l))}</td>
+                    </>}
                     <td>
                       <div className="flex justify-end gap-0.5 text-ink/50">
                         <button title="Monter" onClick={() => moveLine(i, -1)} className="rounded p-1 hover:bg-panel hover:text-ink"><Icon name="up" size={15} /></button>
@@ -164,12 +173,12 @@ export default function DocEdit() {
             <datalist id="catalogue">{articles?.map((a) => <option key={a.id} value={a.designation}>{a.unit} · {money(a.price)} DA</option>)}</datalist>
             <datalist id="units">{units.map((u) => <option key={u} value={u} />)}</datalist>
             <div className="flex flex-wrap items-start justify-between gap-6 p-4">
-              <button className="btn-ghost" onClick={() => update({ lines: [...doc.lines, { designation: '', unit: 'U', price: 0, qty: 1 }] })}><Icon name="plus" size={16} /> Ajouter une ligne</button>
-              <dl className="min-w-[260px] space-y-1 text-sm">
+              <button className="btn-ghost" onClick={() => update({ lines: [...doc.lines, qtyDoc ? { designation: '', unit: 'U', price: 0, qty: 0, contractQty: 0 } : { designation: '', unit: 'U', price: 0, qty: 1 }] })}><Icon name="plus" size={16} /> Ajouter une ligne</button>
+              {qtyDoc ? <p className="max-w-md text-sm text-ink/60">Reste = quantité du contrat − quantité consommée. En rouge si la quantité consommée dépasse le contrat. « → Facture » facture les quantités consommées.</p> : <dl className="min-w-[260px] space-y-1 text-sm">
                 <div className="flex justify-between gap-6"><dt>Total HT</dt><dd className="num font-semibold">{money(t.ht)} DA</dd></div>
                 <div className="flex justify-between gap-6"><dt>TVA {doc.vatRate} %</dt><dd className="num">{money(t.vat)} DA</dd></div>
                 <div className="flex justify-between gap-6 border-t border-line pt-1 text-lg font-bold"><dt>Total TTC</dt><dd className="num">{money(t.ttc)} DA</dd></div>
-              </dl>
+              </dl>}
             </div>
           </section>
 

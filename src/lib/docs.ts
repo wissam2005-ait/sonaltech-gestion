@@ -1,8 +1,20 @@
 import { db, docLabels, docTotals, getCompany, lineTotal, nextNumber, type Client, type Company, type Doc, type DocType } from './db'
-import { amountInWords, dateFr, todayIso } from './format'
+import { amountInWords, dateFr, money, todayIso } from './format'
 import { downloadXlsx, ref, ST, type Sheet } from './xlsx'
 
+/** Montant affiché dans les listes (un attachement n'a pas de montant). */
+export const docAmount = (d: Doc) => (d.type === 'attachement' ? '—' : money(docTotals(d).ttc))
+
 export const docRef = (d: Pick<Doc, 'number' | 'year'>) => `${String(d.number).padStart(2, '0')}/${d.year}`
+
+function convertLines(type: DocType, from?: Partial<Doc>) {
+  if (!from?.lines) return undefined
+  if (type === 'attachement' && from.type !== 'attachement') return from.lines.map((l) => ({ ...l, contractQty: l.qty, qty: 0 }))
+  if (type !== 'attachement' && from.type === 'attachement') {
+    return from.lines.filter((l) => l.qty > 0).map(({ contractQty: _c, ...l }) => { void _c; return { ...l } })
+  }
+  return from.lines.map((l) => ({ ...l }))
+}
 
 /** Crée un document vide (ou à partir d'un autre) avec le prochain numéro. */
 export async function createDoc(type: DocType, from?: Partial<Doc>): Promise<number> {
@@ -12,7 +24,7 @@ export async function createDoc(type: DocType, from?: Partial<Doc>): Promise<num
   const doc: Doc = {
     type, number: await nextNumber(type, year), year, date,
     clientId: from?.clientId, chantierId: from?.chantierId, object: from?.object ?? '',
-    lines: from?.lines?.map((l) => ({ ...l })) ?? [{ designation: '', unit: 'U', price: 0, qty: 1 }],
+    lines: convertLines(type, from) ?? [{ designation: '', unit: 'U', price: 0, qty: type === 'attachement' ? 0 : 1, ...(type === 'attachement' ? { contractQty: 0 } : {}) }],
     vatRate: from?.vatRate ?? company.defaultVat, paymentMode: from?.paymentMode ?? company.defaultPayment,
     status: 'brouillon', payments: [], sourceId: from?.id, createdAt: new Date().toISOString(),
   }
@@ -41,6 +53,16 @@ export async function exportDocExcel(d: Doc) {
   left.forEach((l, i) => push({ v: l, s: i === 0 ? ST.bold : 0 }, null, null, { v: right[i], s: i === 0 ? ST.bold : 0 }))
   if (d.object) { push(); push({ v: `Objet : ${d.object}`, s: ST.bold }) }
   push()
+  if (d.type === 'attachement') {
+    push({ v: 'Description', s: ST.head }, { v: 'U', s: ST.head }, { v: 'Qté contrat', s: ST.head }, { v: 'Qté consommée', s: ST.head }, { v: 'Reste', s: ST.head })
+    for (const l of d.lines) {
+      const r = R.length
+      push({ v: l.designation, s: ST.cell }, { v: l.unit, s: ST.cell }, { v: l.contractQty ?? 0, s: ST.cellNum }, { v: l.qty || 0, s: ST.cellNum }, { v: (l.contractQty ?? 0) - (l.qty || 0), f: `${ref(2, r)}-${ref(3, r)}`, s: ST.numBold })
+    }
+    push(); push({ v: 'LE CLIENT', s: ST.bold }, null, null, { v: 'ENTREPRISE', s: ST.bold })
+    downloadXlsx(`${docLabels[d.type].one} ${docRef(d).replace('/', '-')}`, [{ name: docLabels[d.type].one, rows: R, widths: [52, 8, 14, 16, 12], merges: ['A1:E1', 'A2:E2'] }])
+    return
+  }
   push({ v: 'Description', s: ST.head }, { v: 'U', s: ST.head }, { v: 'PU HT', s: ST.head }, { v: 'Quantité', s: ST.head }, { v: 'Montant HT', s: ST.head })
   const first = R.length
   for (const l of d.lines) {
