@@ -1,6 +1,6 @@
 import { docLabels, docTotals, lineTotal, remaining, type Client, type Company, type Doc } from '../lib/db'
 import { amountInWords, dateFr, money, qtyFmt } from '../lib/format'
-import { docRef, sumWordsLabel } from '../lib/docs'
+import { docRef, sumWordsLabel, totalLabel } from '../lib/docs'
 import logoUrl from '../assets/logo-sonaltech.png'
 
 /** Le document tel qu'il s'imprime (A4), au format des factures de l'entreprise. */
@@ -51,7 +51,7 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
         <table className="mt-4 w-full border-collapse border border-black/70 text-[12px]">
           <thead className="bg-head">
             <tr className="[&>th]:border [&>th]:border-black/70 [&>th]:px-2 [&>th]:py-1.5 [&>th]:font-bold">
-              <th className="w-[50%]">Description</th><th className="w-[8%]">U</th><th className="w-[14%]">Qté contrat</th><th className="w-[15%]">Qté consommée</th><th className="w-[13%]">Reste</th>
+              <th className="w-[50%]">Description</th><th className="w-[8%]">U</th><th className="w-[13%]">Qté contrat</th><th className="w-[13%]">Qté réalisée</th><th className="w-[16%]">Qté reste à réaliser</th>
             </tr>
           </thead>
           <tbody className="[&>tr>td]:border [&>tr>td]:border-black/70 [&>tr>td]:px-2 [&>tr>td]:py-[3px]">
@@ -91,7 +91,7 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
         <p className="pt-1 text-[13px] font-bold">Mode de règlement : {doc.paymentMode.toUpperCase()}</p>
         <table className="w-[40%] border-collapse text-[13.5px] [&_td]:border [&_td]:border-black/70 [&_td]:px-2 [&_td]:py-1.5">
           <tbody>
-            <tr><td className="w-1/2 bg-head text-center font-bold">TOTAL DZD</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>
+            <tr><td className="w-1/2 bg-head text-center font-bold">{totalLabel(doc.type)}</td><td className="text-right font-bold tabular-nums">{money(t.ttc)}</td></tr>
           </tbody>
         </table>
       </div>
@@ -100,8 +100,8 @@ export default function PrintedDoc({ doc, company, client, chantierName }: { doc
 
       </>)}
 
-      <div className={`${doc.type === 'attachement' ? 'mt-12' : 'mt-8'} flex break-inside-avoid ${doc.type === 'devis' || doc.type === 'attachement' ? 'justify-between' : 'justify-end'} px-[10%] pb-16 text-[13px] font-bold italic underline`}>
-        {(doc.type === 'devis' || doc.type === 'attachement') && <span>LE CLIENT{doc.type === 'devis' ? ' (bon pour accord)' : ''}</span>}
+      <div className={`${doc.type === 'attachement' ? 'mt-12' : 'mt-8'} flex break-inside-avoid ${doc.type === 'devis' ? 'justify-between' : 'justify-end'} px-[10%] pb-16 text-[13px] font-bold italic underline`}>
+        {doc.type === 'devis' && <span>LE CLIENT (bon pour accord)</span>}
         <span>ENTREPRISE</span>
       </div>
 
