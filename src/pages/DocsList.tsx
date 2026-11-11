@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db, docLabels, docTotals, paidAmount, type Doc, type DocType } from '../lib/db'
-import { createDoc, docRef } from '../lib/docs'
+import { createDoc, docAmount, docRef } from '../lib/docs'
 import { downloadDocPdf } from '../lib/pdf'
 import { dateFr, money } from '../lib/format'
 import { Badge, Empty, PageHeader } from '../components/ui'
@@ -28,7 +28,7 @@ export default function DocsList() {
     .filter((d) => year === 'all' || d.year === year)
     .filter((d) => !q || `${docRef(d)} ${clientName(d.clientId)} ${d.object}`.toLowerCase().includes(q.toLowerCase()))
     .sort((a, b) => b.year - a.year || b.number - a.number)
-  const total = shown.reduce((s, d) => s + docTotals(d).ttc, 0)
+  const total = type === 'attachement' ? 0 : shown.reduce((s, d) => s + docTotals(d).ttc, 0)
   const unpaid = type === 'facture' || type === 'bon' ? shown.reduce((s, d) => s + Math.max(0, docTotals(d).ttc - paidAmount(d)), 0) : 0
 
   async function onNew() { navigate(`/documents/${type}/${await createDoc(type)}`) }
@@ -36,7 +36,7 @@ export default function DocsList() {
   if (!label) return null
   return (
     <>
-      <PageHeader title={label.many} subtitle={`${shown.length} document${shown.length > 1 ? 's' : ''} · total ${money(total)} DA${unpaid ? ` · reste à encaisser ${money(unpaid)} DA` : ''}`}
+      <PageHeader title={label.many} subtitle={`${shown.length} document${shown.length > 1 ? 's' : ''}${type === 'attachement' ? '' : ` · total ${money(total)} DA`}${unpaid ? ` · reste à encaisser ${money(unpaid)} DA` : ''}`}
         actions={<button className="btn-volt" onClick={onNew}><Icon name="plus" size={16} /> Nouveau {label.one.toLowerCase()}</button>} />
       <div className="mb-4 flex flex-wrap gap-3">
         <input className="input max-w-xs" placeholder="Rechercher (n°, client, objet)…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -50,7 +50,7 @@ export default function DocsList() {
       ) : (
         <div className="card overflow-x-auto">
           <table className="tbl min-w-[720px]">
-            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Objet / chantier</th><th className="!text-right">Total TTC</th><th>État</th><th /></tr></thead>
+            <thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Objet / chantier</th><th className="!text-right">{type === 'attachement' ? '' : 'Total TTC'}</th><th>État</th><th /></tr></thead>
             <tbody>
               {shown.map((d) => {
                 const [s, tone] = statusLabel[d.status]
@@ -61,7 +61,7 @@ export default function DocsList() {
                     <td>{dateFr(d.date)}</td>
                     <td>{clientName(d.clientId)}</td>
                     <td className="max-w-[260px] truncate text-ink/70">{d.object || chantiers?.find((c) => c.id === d.chantierId)?.name || ''}</td>
-                    <td className="num font-semibold">{money(docTotals(d).ttc)}</td>
+                    <td className="num font-semibold">{docAmount(d)}</td>
                     <td><Badge tone={tone}>{s}</Badge>{(type === 'facture' || type === 'bon') && d.status !== 'paye' && paidAmount(d) > 0 && <span className="ml-2 text-xs text-ink/60">reste {money(rest)}</span>}</td>
                     <td className="text-right"><button title="Télécharger le PDF" className="rounded-md border border-line bg-white px-2 py-1 text-xs font-semibold hover:border-ink" onClick={(e) => { e.stopPropagation(); void downloadDocPdf(d) }}>PDF</button></td>
                   </tr>

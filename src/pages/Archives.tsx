@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useLiveQuery } from 'dexie-react-hooks'
-import { db, docLabels, docTotals, type DocType } from '../lib/db'
-import { docRef } from '../lib/docs'
+import { db, docLabels, type DocType } from '../lib/db'
+import { docAmount, docRef } from '../lib/docs'
 import { downloadDocPdf, openDocPdf, zipPdfs } from '../lib/pdf'
-import { dateFr, money, monthLabel } from '../lib/format'
+import { dateFr, monthLabel } from '../lib/format'
 import { Empty, PageHeader } from '../components/ui'
 import { Icon } from '../components/icons'
 
@@ -54,7 +54,7 @@ export default function Archives() {
               <td className="font-semibold"><Link to={`/documents/${d.type}/${d.id}`}>{docLabels[d.type].one} {docRef(d)}</Link></td>
               <td>{dateFr(d.date)}</td>
               <td>{clients?.find((c) => c.id === d.clientId)?.name ?? '—'}</td>
-              <td className="num">{money(docTotals(d).ttc)}</td>
+              <td className="num">{docAmount(d)}</td>
               <td className="whitespace-nowrap text-right">
                 <button className="btn-ghost px-2.5 py-1.5" onClick={() => openDocPdf(d)}><Icon name="external" size={15} /> Ouvrir</button>{' '}
                 <button className="btn-primary px-2.5 py-1.5" onClick={() => downloadDocPdf(d)}><Icon name="download" size={15} /> PDF</button>

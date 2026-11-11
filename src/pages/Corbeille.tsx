@@ -9,7 +9,7 @@ const tableLabel: Record<SyncTable, string> = { docs: 'Document', clients: 'Clie
 
 function describe(t: TrashItem) {
   const r = t.record as Record<string, unknown>
-  if (t.table === 'docs') { const d = r as unknown as Doc; return `${docLabels[d.type]?.one ?? 'Document'} ${docRef(d)} — ${money(docTotals(d).ttc)} DA` }
+  if (t.table === 'docs') { const d = r as unknown as Doc; return `${docLabels[d.type]?.one ?? 'Document'} ${docRef(d)}${d.type === 'attachement' ? '' : ` — ${money(docTotals(d).ttc)} DA`}` }
   if (t.table === 'frais') return `${r.category} — ${money(r.amount as number)} DA (${String(r.date).split('-').reverse().join('/')})`
   if (t.table === 'pointages') return `${String(r.date).split('-').reverse().join('/')} — ${r.status}`
   return String(r.name ?? r.designation ?? t.id)

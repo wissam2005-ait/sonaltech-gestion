@@ -4,7 +4,7 @@
  */
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { db, docLabels, docTotals, getCompany, lineTotal, type Client, type Company, type Doc } from './db'
+import { db, docLabels, docTotals, getCompany, lineTotal, remaining, type Client, type Company, type Doc } from './db'
 import { amountInWords, dateFr, money, qtyFmt } from './format'
 import { docRef, sumWordsLabel } from './docs'
 import { downloadBlob, safeFileName } from './xlsx'
@@ -28,12 +28,14 @@ export const pdfName = (d: Doc) => `Sonaltech Électrique - ${docLabels[d.type].
 /** Les espaces fines (milliers) ne sont pas dans les polices PDF standard */
 const t = (s: string | number | undefined | null) => String(s ?? '').replace(/[\u202f\u00a0]/g, ' ')
 
-function footer(pdf: jsPDF, label: string) {
+/** Cadre autour de chaque page ; aucun texte en bas de page (seulement le n° de page s'il y en a plusieurs). */
+function frame(pdf: jsPDF) {
   const n = pdf.getNumberOfPages()
   for (let i = 1; i <= n; i++) {
-    pdf.setPage(i); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(120)
-    pdf.text(t(label), M, 290)
-    if (n > 1) pdf.text(`Page ${i} / ${n}`, 210 - M, 290, { align: 'right' })
+    pdf.setPage(i)
+    const pw = pdf.internal.pageSize.getWidth(), ph = pdf.internal.pageSize.getHeight()
+    pdf.setDrawColor(40); pdf.setLineWidth(0.6); pdf.rect(5, 5, pw - 10, ph - 10)
+    if (n > 1) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8); pdf.setTextColor(120); pdf.text(`${i} / ${n}`, pw - 9, ph - 7.5, { align: 'right' }) }
   }
 }
 
@@ -67,8 +69,8 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
     for (const [k, v, title] of rows) {
       pdf.setFontSize(9)
       if (title) { pdf.setFont('helvetica', 'bold'); pdf.text(t(k.toUpperCase()), x, y); y += lh; continue }
-      pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80); const label = `${k} : `; pdf.text(label, x, y)
-      const lw = pdf.getTextWidth(label); pdf.setTextColor(0); pdf.setFont('helvetica', 'bold')
+      pdf.setFont('helvetica', 'bold'); pdf.setTextColor(0); const label = `${k} : `; pdf.text(label, x, y)
+      const lw = pdf.getTextWidth(label); pdf.setTextColor(70); pdf.setFont('helvetica', 'normal')
       const lines = pdf.splitTextToSize(t(k === 'A' ? v.toUpperCase() : v), maxW - lw) as string[]
       pdf.text(lines.length ? lines : [''], x + lw + (k === 'A' ? 6 : 0), y); y += lh * Math.max(1, lines.length)
     }
@@ -77,8 +79,10 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   const yl = writeCol(left, M + 3, half - 6), yr = writeCol(right, M + half + 3, half - 6)
   const telY = Math.max(yl, yr) + 2
   for (const [x, v] of [[M + 3, company.phone], [M + half + 3, client?.phone ?? '']] as [number, string][]) {
-    pdf.setFont('helvetica', 'normal'); pdf.setTextColor(80); pdf.text('Téléphone : ', x, telY)
-    pdf.setTextColor(0); pdf.setFont('helvetica', 'bold'); pdf.text(t(v), x + pdf.getTextWidth('Téléphone : '), telY)
+    pdf.setFont('helvetica', 'bold'); pdf.setTextColor(0); pdf.text('Téléphone : ', x, telY)
+    const lw = pdf.getTextWidth('Téléphone : ')
+    pdf.setTextColor(70); pdf.setFont('helvetica', 'normal'); pdf.text(t(v), x + lw, telY)
+    pdf.setTextColor(0)
   }
   const boxBottom = telY + 3
   pdf.setDrawColor(60); pdf.setLineWidth(0.3); pdf.rect(M, top, W, boxBottom - top); pdf.line(M + half, top, M + half, boxBottom)
@@ -91,9 +95,34 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
     pdf.text(lines, M + pdf.getTextWidth('Objet : '), y); y += 4.5 * lines.length + 2
   }
 
+  // Attachement : quantités seulement
+  if (doc.type === 'attachement') {
+    autoTable(pdf, {
+      startY: y, margin: { left: M, right: M, top: 14, bottom: 14 },
+      head: [['Description', 'U', 'Qté contrat', 'Qté consommée', 'Reste']],
+      body: doc.lines.map((l) => [t(l.designation), t(l.unit), t(qtyFmt(l.contractQty ?? 0)), t(qtyFmt(l.qty || 0)), t(qtyFmt(remaining(l)))]),
+      theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: 1.4, lineColor: [60, 60, 60], lineWidth: 0.2, textColor: 0, valign: 'middle' },
+      headStyles: { fillColor: HEAD, textColor: 0, fontStyle: 'bold', halign: 'center' },
+      columnStyles: {
+        0: { cellWidth: W * 0.5, font: 'courier', fontStyle: 'bold', fontSize: 8.6 },
+        1: { cellWidth: W * 0.08, halign: 'center' }, 2: { cellWidth: W * 0.14, halign: 'center' },
+        3: { cellWidth: W * 0.15, halign: 'center' }, 4: { cellWidth: W * 0.13, halign: 'center', fontStyle: 'bold' },
+      },
+    })
+    y = (pdf as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 16
+    if (y > 270) { pdf.addPage(); y = 25 }
+    pdf.setFont('helvetica', 'bolditalic'); pdf.setFontSize(10.5); pdf.setTextColor(0)
+    for (const [label, x] of [['LE CLIENT', M + W * 0.22], ['ENTREPRISE', M + W * 0.78]] as [string, number][]) {
+      pdf.text(label, x, y, { align: 'center' }); const w = pdf.getTextWidth(label); pdf.setLineWidth(0.3); pdf.line(x - w / 2, y + 0.8, x + w / 2, y + 0.8)
+    }
+    frame(pdf)
+    return pdf
+  }
+
   // Tableau des lignes
   autoTable(pdf, {
-    startY: y, margin: { left: M, right: M },
+    startY: y, margin: { left: M, right: M, top: 14, bottom: 14 },
     head: [['Description', 'U', 'PU HT', 'Quantité', 'Montant HT']],
     body: doc.lines.map((l) => [t(l.designation), t(l.unit), t(money(l.price)), t(qtyFmt(l.qty)), t(money(lineTotal(l)))]),
     theme: 'grid',
@@ -131,10 +160,10 @@ export async function buildDocPdf(doc: Doc, given?: { company?: Company; client?
   // Signatures
   pdf.setFont('helvetica', 'bolditalic'); pdf.setFontSize(10.5)
   const sign = (label: string, x: number) => { pdf.text(label, x, y, { align: 'center' }); const w = pdf.getTextWidth(label); pdf.setLineWidth(0.3); pdf.line(x - w / 2, y + 0.8, x + w / 2, y + 0.8) }
-  if (doc.type === 'devis' || doc.type === 'attachement') sign(doc.type === 'devis' ? 'LE CLIENT (bon pour accord)' : 'LE CLIENT', M + W * 0.22)
+  if (doc.type === 'devis') sign('LE CLIENT (bon pour accord)', M + W * 0.22)
   sign('ENTREPRISE', M + W * 0.78)
 
-  footer(pdf, company.bank ? `Coordonnées de paiement : ${company.bank}` : `${company.name} — ${company.phone}`)
+  frame(pdf)
   return pdf
 }
 
@@ -159,14 +188,14 @@ export async function tablePdf(opts: { title: string; subtitle?: string; head: s
   if (opts.subtitle) { pdf.setFont('helvetica', 'normal'); pdf.setFontSize(9); pdf.setTextColor(90); pdf.text(t(opts.subtitle), M, 32) }
   const columnStyles = Object.fromEntries((opts.align ?? []).map((a, i) => [i, { halign: a }]))
   autoTable(pdf, {
-    startY: opts.subtitle ? 36 : 31, margin: { left: M, right: M },
+    startY: opts.subtitle ? 36 : 31, margin: { left: M, right: M, top: 14, bottom: 14 },
     head: [opts.head.map(t)], body: opts.body.map((r) => r.map(t)), foot: opts.foot ? [opts.foot.map(t)] : undefined,
     didParseCell: (h) => { if (h.section === 'foot' && opts.align?.[h.column.index]) h.cell.styles.halign = opts.align[h.column.index] },
     theme: 'grid', styles: { fontSize: opts.landscape ? 7 : 8.5, cellPadding: 1.2, lineColor: [150, 150, 150], lineWidth: 0.15, textColor: 0 },
     headStyles: { fillColor: HEAD, textColor: 0, fontStyle: 'bold' }, footStyles: { fillColor: [240, 243, 246], textColor: 0, fontStyle: 'bold' },
     columnStyles,
   })
-  footer(pdf, `Édité le ${new Date().toLocaleDateString('fr-FR')}`)
+  frame(pdf)
   downloadBlob(pdf.output('blob'), opts.fileName)
 }
 
