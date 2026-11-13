@@ -4,3 +4,5 @@ dev-dist
 dist-usb
 .dev-store.json
 .netlify
+.vercel
+.env*
