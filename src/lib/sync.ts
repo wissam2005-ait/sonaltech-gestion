@@ -14,7 +14,8 @@ const ls = {
 }
 
 /** Adresse du site. Version en ligne : le site lui-même. Version fichier (clé USB) : à indiquer dans Paramètres. */
-export const isFileVersion = () => location.protocol === 'file:'
+/** Version fichier : ouverte depuis l'appareil (file://, content:// sur Android, etc.), et non depuis le site. */
+export const isFileVersion = () => !/^https?:$/.test(location.protocol)
 export const getServer = () => (isFileVersion() ? (ls.get(LS.server) ?? import.meta.env.VITE_SYNC_URL ?? '') : '').replace(/\/+$/, '')
 export const setServer = (url: string) => { ls.set(LS.server, url.trim().replace(/\/+$/, '')); void syncNow() }
 

@@ -20,7 +20,7 @@ export default function SyncBadge({ compact = false }: { compact?: boolean }) {
     offline: { dot: 'bg-[#f0a33a]', text: 'Hors ligne', sub: s.pending ? `${s.pending} en attente — partiront au retour d'internet` : 'tout est déjà sur le site' },
     error: { dot: 'bg-[#ff6b5e]', text: 'Site injoignable', sub: s.message || 'nouvel essai automatique' },
     login: { dot: 'bg-[#ff6b5e]', text: 'Non connecté au site', sub: 'cliquez pour vous connecter' },
-    noserver: { dot: 'bg-[#ff6b5e]', text: 'Site non configuré', sub: 'cliquez pour indiquer l’adresse' },
+    noserver: { dot: 'bg-white/40', text: 'Enregistré sur cet appareil', sub: 'sans internet · relier un site (facultatif)' },
   }[s.state]
   const needsLogin = !isLoggedIn() || s.state === 'login' || s.state === 'noserver'
   return (
