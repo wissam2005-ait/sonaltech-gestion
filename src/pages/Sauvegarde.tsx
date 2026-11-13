@@ -1,3 +1,4 @@
+import { isFileVersion } from '../lib/sync'
 import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { backupAge, exportBackup, importBackup, isPersistent } from '../lib/backup'
@@ -39,7 +40,7 @@ export default function Sauvegarde() {
       <section className="card mt-6 p-6 text-sm text-ink/70">
         <h2 className="mb-2 text-xl font-bold text-ink">Bon à savoir</h2>
         <ul className="list-disc space-y-1 pl-5">
-          {location.protocol === 'file:' ? (
+          {isFileVersion() ? (
             <li>Version « fichier » : les données sont gardées par Chrome sur cet ordinateur, même si vous déplacez ou recopiez le fichier Sonaltech.html. Ouvrez-le <strong>toujours avec le même navigateur</strong> (Chrome), sinon vous ne verrez pas vos données.</li>
           ) : (
             <li>Protection contre l’effacement automatique par le navigateur : <strong>{persistent === null ? '…' : persistent ? 'activée' : 'non accordée'}</strong>{persistent === false && ' — installez l’application (icône ⊕ dans la barre d’adresse de Chrome) pour l’obtenir.'}</li>
