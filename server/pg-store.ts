@@ -1,5 +1,5 @@
 import pg from 'pg'
-import type { Store } from './core'
+import type { Store } from './core.js'
 
 /**
  * Stockage PostgreSQL (Neon) pour l'hébergement Vercel : une table clé → données JSON,
