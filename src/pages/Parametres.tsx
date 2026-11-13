@@ -4,6 +4,7 @@ import { db, docLabels, getCompany, type Company, type DocType } from '../lib/db
 import { Field, PageHeader } from '../components/ui'
 import { Icon } from '../components/icons'
 import { parseNum } from '../lib/format'
+import { changePassword, isLoggedIn, logout } from '../lib/sync'
 
 export default function Parametres() {
   const stored = useLiveQuery(getCompany, [])
@@ -46,6 +47,39 @@ export default function Parametres() {
           ))}
         </div>
       </section>
+      {isLoggedIn() && <PasswordSection />}
     </>
+  )
+}
+
+/** Mot de passe du site : à changer ici, sans passer par l'hébergeur. */
+function PasswordSection() {
+  const [f, setF] = useState({ current: '', next: '', confirm: '' })
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const set = (k: keyof typeof f) => (e: { target: { value: string } }) => { setMsg(null); setF({ ...f, [k]: e.target.value }) }
+  return (
+    <section className="card mt-6 p-6">
+      <h2 className="text-2xl font-bold">Mot de passe</h2>
+      <p className="mt-1 text-sm text-ink/60">Mot de passe pour ouvrir la gestion en ligne. Après un changement, les autres appareils devront se reconnecter avec le nouveau.</p>
+      <form className="mt-4 grid gap-4 sm:grid-cols-3" onSubmit={async (e) => {
+        e.preventDefault()
+        if (f.next.length < 8) return setMsg({ ok: false, text: 'Le nouveau mot de passe doit faire au moins 8 caractères.' })
+        if (f.next !== f.confirm) return setMsg({ ok: false, text: 'Les deux nouveaux mots de passe ne sont pas identiques.' })
+        setBusy(true)
+        try { await changePassword(f.current, f.next); setF({ current: '', next: '', confirm: '' }); setMsg({ ok: true, text: 'Mot de passe changé.' }) }
+        catch (err) { setMsg({ ok: false, text: (err as Error).message === 'Failed to fetch' ? 'Il faut une connexion internet pour changer le mot de passe.' : (err as Error).message }) }
+        finally { setBusy(false) }
+      }}>
+        <Field label="Mot de passe actuel"><input className="input" type="password" autoComplete="current-password" required value={f.current} onChange={set('current')} /></Field>
+        <Field label="Nouveau mot de passe"><input className="input" type="password" autoComplete="new-password" required minLength={8} value={f.next} onChange={set('next')} /></Field>
+        <Field label="Confirmer le nouveau"><input className="input" type="password" autoComplete="new-password" required value={f.confirm} onChange={set('confirm')} /></Field>
+        <div className="flex flex-wrap items-center gap-3 sm:col-span-3">
+          <button className="btn-primary" disabled={busy}><Icon name="key" size={16} /> {busy ? 'Enregistrement…' : 'Changer le mot de passe'}</button>
+          <button type="button" className="btn-ghost" onClick={() => { logout(); location.reload() }}>Se déconnecter de cet appareil</button>
+          {msg && <span className={`text-sm font-semibold ${msg.ok ? 'text-green-700' : 'text-[#8e1f19]'}`}>{msg.text}</span>}
+        </div>
+      </form>
+    </section>
   )
 }
