@@ -7,7 +7,7 @@
  * - `_srv` = heure du serveur à la réception ; un appareil récupère ce qui a changé depuis sa dernière visite.
  * - Une copie complète des données est gardée chaque jour (historique).
  */
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from 'node:crypto'
 
 export const TABLES = ['clients', 'chantiers', 'articles', 'docs', 'employees', 'pointages', 'frais', 'settings'] as const
 export type TableName = (typeof TABLES)[number]
@@ -29,6 +29,26 @@ export function tokenFor(password: string) {
 function sameText(a: string, b: string) {
   const x = Buffer.from(a), y = Buffer.from(b)
   return x.length === y.length && timingSafeEqual(x, y)
+}
+
+/* Mot de passe : APP_PASSWORD au départ, puis celui choisi dans l'application (enregistré haché dans la base). */
+const PASSWORD_KEY = 'auth/password'
+type StoredPassword = { salt: string; hash: string }
+const hashPassword = (pw: string, salt: string) => scryptSync(pw, salt, 32).toString('hex')
+
+async function storedPassword(store: Store): Promise<StoredPassword | null> {
+  const cur = (await store.get(PASSWORD_KEY)) as { data?: unknown } | null
+  const d = cur?.data as Partial<StoredPassword> | undefined
+  return d && typeof d.salt === 'string' && typeof d.hash === 'string' ? { salt: d.salt, hash: d.hash } : null
+}
+async function passwordOk(store: Store, envPassword: string, candidate: string) {
+  const st = await storedPassword(store)
+  return st ? sameText(hashPassword(candidate, st.salt), st.hash) : sameText(candidate, envPassword)
+}
+/** Le jeton change quand le mot de passe change : les autres appareils doivent se reconnecter. */
+async function currentToken(store: Store, envPassword: string) {
+  const st = await storedPassword(store)
+  return tokenFor(st ? st.hash : envPassword)
 }
 
 const json = (status: number, body: unknown) => new Response(status === 204 ? null : JSON.stringify(body), {
@@ -61,17 +81,28 @@ export function mergeInto(table: TableData, incoming: Rec[], now: number) {
 export async function handle(req: Request, store: Store, password: string | undefined): Promise<Response> {
   if (req.method === 'OPTIONS') return json(204, null)
   const path = new URL(req.url).pathname
-  if (!password) return json(503, { error: 'Synchronisation non configurée : définissez APP_PASSWORD sur Netlify.' })
+  if (!password) return json(503, { error: 'Synchronisation non configurée : définissez APP_PASSWORD chez l’hébergeur.' })
 
   if (path.endsWith('/api/login') && req.method === 'POST') {
     const body = (await req.json().catch(() => ({}))) as { password?: string }
-    if (!body.password || !sameText(body.password, password)) return json(401, { error: 'Mot de passe incorrect.' })
-    return json(200, { token: tokenFor(password) })
+    if (!body.password || !(await passwordOk(store, password, body.password))) return json(401, { error: 'Mot de passe incorrect.' })
+    return json(200, { token: await currentToken(store, password) })
+  }
+
+  if (path.endsWith('/api/password') && req.method === 'POST') {
+    const auth = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
+    if (!sameText(auth, await currentToken(store, password))) return json(401, { error: 'Session expirée : reconnectez-vous.' })
+    const body = (await req.json().catch(() => ({}))) as { current?: string; next?: string }
+    if (!body.current || !(await passwordOk(store, password, body.current))) return json(401, { error: 'Mot de passe actuel incorrect.' })
+    if (typeof body.next !== 'string' || body.next.length < 8) return json(400, { error: 'Le nouveau mot de passe doit faire au moins 8 caractères.' })
+    const salt = randomBytes(16).toString('hex')
+    await store.put(PASSWORD_KEY, { salt, hash: hashPassword(body.next, salt) })
+    return json(200, { token: await currentToken(store, password) })
   }
 
   if (path.endsWith('/api/sync') && req.method === 'POST') {
     const auth = req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ?? ''
-    if (!sameText(auth, tokenFor(password))) return json(401, { error: 'Session expirée : reconnectez-vous.' })
+    if (!sameText(auth, await currentToken(store, password))) return json(401, { error: 'Session expirée : reconnectez-vous.' })
     const body = (await req.json().catch(() => null)) as { since?: number; changes?: Partial<Record<TableName, Rec[]>> } | null
     if (!body) return json(400, { error: 'Requête invalide.' })
     const since = typeof body.since === 'number' ? body.since : 0

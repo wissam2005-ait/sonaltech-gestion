@@ -35,6 +35,16 @@ export async function login(password: string) {
   ls.set(LS.token, body.token)
   await syncNow()
 }
+/** Change le mot de passe du site (tous les autres appareils devront se reconnecter). */
+export async function changePassword(current: string, next: string) {
+  const res = await fetch(`${getServer()}/api/password`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ls.get(LS.token) ?? ''}` },
+    body: JSON.stringify({ current, next }),
+  })
+  const body = await res.json().catch(() => ({})) as { token?: string; error?: string }
+  if (!res.ok || !body.token) throw new Error(body.error ?? `Erreur ${res.status}`)
+  ls.set(LS.token, body.token)
+}
 export function logout() { ls.del(LS.token); setStatus({ state: 'login' }) }
 
 async function countPending() {

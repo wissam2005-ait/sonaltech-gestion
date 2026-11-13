@@ -19,4 +19,4 @@ export default async (req: Request) => {
   return handle(req, store, process.env.APP_PASSWORD)
 }
 
-export const config: Config = { path: ['/api/login', '/api/sync'] }
+export const config: Config = { path: ['/api/login', '/api/sync', '/api/password'] }
